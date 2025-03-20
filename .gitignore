@@ -172,20 +172,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-\ No newline at end of file
- .gitlab-ci.yml  0 → 100644
-+
-9
-−
-0
-
-Viewed
-stages:
-  - lint
-  - test
-
-ruff:
-  stage: lint
-  image: registry.gitlab.com/pipeline-components/ruff:latest
-  script:
-    - ruff check --output-format=gitlab .
