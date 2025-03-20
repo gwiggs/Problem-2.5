@@ -1,0 +1,9 @@
+stages:
+  - lint
+  - test
+
+ruff:
+  stage: lint
+  image: registry.gitlab.com/pipeline-components/ruff:latest
+  script:
+    - ruff check --output-format=gitlab .

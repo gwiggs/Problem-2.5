@@ -1,6 +1,9 @@
 # FastAPI + Streamlit App
 
-This repository contains a containerized web application with a **FastAPI** backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify deployment and local development, with live reloading enabled for seamless updates.
+This repository contains a containerized web application with a **FastAPI**
+backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
+deployment and local development, with live reloading enabled for seamless
+updates.
 
 ---
 
@@ -10,9 +13,10 @@ This repository contains a containerized web application with a **FastAPI** back
 
 Run the following command to build and start the containers:  
 
-```docker-compose up  ```
+```docker-compose up```
 
-This will:  
+This will: 
+
 1. Build the Docker images for the FastAPI and Streamlit services.  
 2. Start the containers and serve the application.  
 
@@ -21,11 +25,11 @@ This will:
 ## Features
 
 - **FastAPI Backend**:  
-  Hosted on http://localhost:8000  
-  Interactive API documentation available at http://localhost:8000/docs  
+  Hosted on <http://localhost:8000>  
+  Interactive API documentation available at <http://localhost:8000/docs > 
 
 - **Streamlit Frontend**:  
-  Hosted on http://localhost:8501  
+  Hosted on <http://localhost:8501>  
 
 - **Live Reloading**:  
   Hot reloading is enabled for both FastAPI and Streamlit during development.
@@ -44,11 +48,11 @@ Before you start, ensure the following tools are installed on your system:
 ## Access the Application
 
 - **FastAPI Backend**:  
-  Visit http://localhost:8000 to access the API.  
-  Documentation is available at http://localhost:8000/docs  
+  Visit <http://localhost:8000> to access the API.  
+  Documentation is available at <http://localhost:8000/docs>  
 
 - **Streamlit Frontend**:  
-  Visit http://localhost:8501 to interact with the frontend.  
+  Visit <http://localhost:8501> to interact with the frontend.  
 
 ---
 
@@ -56,7 +60,8 @@ Before you start, ensure the following tools are installed on your system:
 
 ### Live Reloading
 
-Both FastAPI and Streamlit support hot reloading out of the box. Any changes you make to the code will automatically reflect in the running containers.  
+Both FastAPI and Streamlit support hot reloading out of the box. Any changes you 
+make to the code will automatically reflect in the running containers.  
 
 ### Stopping the Application
 
@@ -72,6 +77,7 @@ This will stop and remove the containers, but the built images will remain.
 
 The project structure is as follows:  
 
+```shell
 .  
 ├── backend/               # FastAPI application  
 │   ├── main.py            # FastAPI entrypoint  
@@ -83,13 +89,15 @@ The project structure is as follows:
 │   └── requirements.txt   # Python dependencies for streamlit  
 ├── docker-compose.yml     # Docker Compose configuration  
 └── README.md              # Project documentation  
+```
 
 ---
 
 ## Troubleshooting
 
 - Ensure Docker and Docker Compose are installed and running on your system.  
-- Verify that the required ports (8000 and 8501) are not in use by other applications.  
+- Verify that the required ports (8000 and 8501) are not in use by other 
+applications.  
 
 ---
 
