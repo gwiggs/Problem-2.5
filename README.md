@@ -1,4 +1,4 @@
-# FastAPI + Streamlit App
+# WIP
 
 This repository contains a containerized web application with a **FastAPI**
 backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
