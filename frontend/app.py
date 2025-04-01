@@ -51,22 +51,6 @@ def main():
             deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip)
             st.pydeck_chart(deck)
 
-            # Sidebar for selecting columns to display
-            with st.sidebar:
-                st.write("Select columns to display:")
-                default_columns = ["datetime_of_article", "actiongeofullname", "cameocodedescription", "goldsteinscale"]
-                selected_columns = [
-                    column for column in combined_df.columns
-                    if st.checkbox(column, value=(column in default_columns))
-                ]
-
-            # Display the selected columns from the combined dataframe
-            if selected_columns:
-                st.write("Selected Columns Data from All Files:")
-                st.dataframe(combined_df[selected_columns])
-            else:
-                st.info("No columns selected.")
-
         except Exception as e:
             st.error(f"Error processing uploaded files: {e}")
 
