@@ -5,6 +5,14 @@ backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
 deployment and local development, with live reloading enabled for seamless
 updates.
 
+**TO DO**
+
+- Either remove references to FastAPI or intergrate
+- Add a slider to filter with by time (Time Series analysis)
+- Allow filtering by event codes
+- Trend analysis using the goldstein scale
+- Interation network
+
 ---
 
 ## Getting Started
