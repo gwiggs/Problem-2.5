@@ -1,7 +1,11 @@
-# FastAPI + Streamlit App
+# GDEL Visualisation tool
+
+This tool ingests GDEL data in a csv format and visualises the 'action_lat' and action_long' fields to with interactive desctiptions of what is occuring. 
 
 This repository contains a containerized web application with a **FastAPI**
-backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
+backend and a **Streamlit** frontend. 
+
+The setup uses Docker Compose to simplify
 deployment and local development, with live reloading enabled for seamless
 updates.
 
