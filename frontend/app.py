@@ -22,9 +22,28 @@ def main():
             # Ensure latitude and longitude fields are numeric
             combined_df['actiongeolat'] = pd.to_numeric(combined_df['actiongeolat'], errors='coerce')
             combined_df['actiongeolong'] = pd.to_numeric(combined_df['actiongeolong'], errors='coerce')
-            
+
+            # Convert datetime_of_article to datetime format
+            combined_df['datetime_of_article'] = pd.to_datetime(combined_df['datetime_of_article'], errors='coerce')
+
+            # Add a slider for selecting a date range
+            min_date = combined_df['datetime_of_article'].min().to_pydatetime()
+            max_date = combined_df['datetime_of_article'].max().to_pydatetime()
+            date_range = st.slider(
+                "Select a date range:",
+                min_value=min_date,
+                max_value=max_date,
+                value=(min_date, max_date)
+            )
+
+            # Filter data based on the selected date range
+            filtered_data = combined_df[
+                (combined_df['datetime_of_article'] >= date_range[0]) &
+                (combined_df['datetime_of_article'] <= date_range[1])
+            ]
+
             # Prepare data for the map
-            map_data = combined_df.dropna(subset=['actiongeolat', 'actiongeolong'])
+            map_data = filtered_data.dropna(subset=['actiongeolat', 'actiongeolong'])
 
             # Add a map visualization with tooltips
             st.write("Map Visualization:")
