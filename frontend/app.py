@@ -1,12 +1,12 @@
-from classes.frontend_class_example import HelloWorld
+# from classes.frontend_class_example import HelloWorld
 import streamlit as st
+# import os
 import requests
-import os
 
 UPLOAD_DIR = "uploaded_videos"
 
 def main():
-    st.title("Batch video upload/view/review")
+    st.title("Batch videos")
 
     # Video upload section
     st.header("Upload a Video")
