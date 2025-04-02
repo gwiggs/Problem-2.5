@@ -8,17 +8,17 @@ def main():
     st.title("Batch videos")
 
     # Video upload section
-    st.header("Upload a Video")
-    uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
-    if uploaded_file is not None:
-        # Send the file to the backend
-        files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
-        response = requests.post("http://backend:8000/upload/", files=files)
-        if response.status_code == 200:
-            st.success(f"Upload successful: {response.json()['message']}")
-            st.session_state.refresh = True  # Trigger a refresh
-        else:
-            st.error(f"Upload failed: {response.text}")
+    st.header("Upload Videos")
+    uploaded_files = st.file_uploader("Choose video files", type=["mp4", "avi", "mov"], accept_multiple_files=True)
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            # Send each file to the backend
+            files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
+            response = requests.post("http://backend:8000/upload/", files=files)
+            if response.status_code == 200:
+                st.success(f"Upload successful: {response.json()['message']} for {uploaded_file.name}")
+            else:
+                st.error(f"Upload failed for {uploaded_file.name}: {response.text}")
 
     # Initialize refresh state
     if "refresh" not in st.session_state:
