@@ -1,6 +1,4 @@
-# from classes.frontend_class_example import HelloWorld
 import streamlit as st
-# import os
 import requests
 
 UPLOAD_DIR = "uploaded_videos"
@@ -40,6 +38,35 @@ def main():
                             st.error(f"Failed to load video: {video}")
         else:
             st.info("No videos uploaded yet.")
+    else:
+        st.error("Failed to fetch video list.")
+
+    # Delete video section
+    st.header("Delete a Video")
+
+    # Fetch the list of videos from the backend
+    response = requests.get("http://backend:8000/videos/")
+    if response.status_code == 200:
+        video_list = response.json().get("videos", [])
+        if video_list:
+            # Use a dropdown to select a video to delete
+            video_to_delete = st.selectbox("Select a video to delete:", video_list, key="video_to_delete")
+            if st.button("Delete Selected Video"):
+                try:
+                    # Send DELETE request to the backend
+                    delete_response = requests.delete(f"http://backend:8000/video/{video_to_delete}")
+                    if delete_response.status_code == 200:
+                        st.success(delete_response.json().get("message", "Video deleted successfully!"))
+                        # Clear the session state to simulate a refresh
+                        del st.session_state["video_to_delete"]
+                    elif delete_response.status_code == 404:
+                        st.error("Video not found.")
+                    else:
+                        st.error("An error occurred while deleting the video.")
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+        else:
+            st.info("No videos available to delete.")
     else:
         st.error("Failed to fetch video list.")
 

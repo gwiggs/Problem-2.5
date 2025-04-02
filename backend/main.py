@@ -1,5 +1,5 @@
 # fastapi_app/main.py
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from classes.backend_class_example import HelloWorld
 import os
@@ -46,3 +46,18 @@ async def list_videos():
     files = os.listdir(UPLOAD_DIR)
     video_files = [file for file in files if os.path.isfile(os.path.join(UPLOAD_DIR, file))]
     return {"videos": video_files}
+
+@app.delete("/video/{filename}")
+async def delete_video(filename: str):
+    """
+    Delete a video file from the uploaded_videos directory.
+    """
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            return {"message": f"Video '{filename}' deleted successfully!"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
