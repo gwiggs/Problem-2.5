@@ -1,7 +1,7 @@
-from classes.frontend_class_example import HelloWorld
+# from classes.frontend_class_example import HelloWorld
 import streamlit as st
+# import os
 import requests
-import os
 
 UPLOAD_DIR = "uploaded_videos"
 
