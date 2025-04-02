@@ -1,19 +1,19 @@
-from classes.frontend_class_example import HelloWorld
+# from classes.frontend_class_example import HelloWorld
 import streamlit as st
+# import os
 import requests
-import os
 
 UPLOAD_DIR = "uploaded_videos"
 
 def main():
-    st.title("Batch video upload/view/review")
+    st.title("Batch videos")
 
     # Video upload section
     st.header("Upload a Video")
     uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
     if uploaded_file is not None:
         # Send the file to the backend
-        files = {"file": (uploaded_filse.name, uploaded_file, uploaded_file.type)}
+        files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
         response = requests.post("http://backend:8000/upload/", files=files)
         if response.status_code == 200:
             st.success(f"Upload successful: {response.json()['message']}")
