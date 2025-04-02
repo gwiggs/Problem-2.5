@@ -6,14 +6,14 @@ import os
 UPLOAD_DIR = "uploaded_videos"
 
 def main():
-    st.title("Streamlit and FastAPI Integration")
+    st.title("Batch video upload/view/review")
 
     # Video upload section
     st.header("Upload a Video")
     uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
     if uploaded_file is not None:
         # Send the file to the backend
-        files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
+        files = {"file": (uploaded_filse.name, uploaded_file, uploaded_file.type)}
         response = requests.post("http://backend:8000/upload/", files=files)
         if response.status_code == 200:
             st.success(f"Upload successful: {response.json()['message']}")
@@ -26,10 +26,18 @@ def main():
     if response.status_code == 200:
         video_list = response.json().get("videos", [])
         if video_list:
-            selected_video = st.selectbox("Select a video to view:", video_list)
-            if st.button("Play Selected Video"):
-                video_url = f"http://backend:8000/video/{selected_video}"
-                st.video(video_url)
+            # Create a 2-column grid layout for videos
+            for i in range(0, len(video_list), 2):
+                cols = st.columns(2)  # Create 2 columns
+                for j, video in enumerate(video_list[i:i+2]):  # Slice 2 videos at a time
+                    with cols[j]:
+                        st.write(video)  # Display the video name
+                        video_url = f"http://backend:8000/video/{video}"
+                        response = requests.get(video_url)
+                        if response.status_code == 200:
+                            st.video(response.content)
+                        else:
+                            st.error(f"Failed to load video: {video}")
         else:
             st.info("No videos uploaded yet.")
     else:

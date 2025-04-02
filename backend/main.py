@@ -3,6 +3,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from classes.backend_class_example import HelloWorld
 import os
+from mimetypes import guess_type
 
 app = FastAPI()
 
@@ -28,7 +29,10 @@ async def get_video(filename: str):
     """
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="video/mp4", filename=filename)
+        mime_type, _ = guess_type(file_path)
+        # Default to "video/mp4" if MIME type is not detected
+        mime_type = mime_type or "video/mp4"
+        return FileResponse(file_path, media_type=mime_type, filename=filename)
     return {"error": "File not found"}
 
 @app.get("/videos/")
