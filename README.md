@@ -1,4 +1,10 @@
-# FastAPI + Streamlit App
+# Batch Video uploader and Viewer
+
+## Tool Description
+
+Upload multiple videos which will be stored in the fastapi backend
+A description of the video will then be generated based on a machine learning model trained on different videos
+You will then be able to view and play multiple videos at a time or search for different keywords from the generated text
 
 This repository contains a containerized web application with a **FastAPI**
 backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
