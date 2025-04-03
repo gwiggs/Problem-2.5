@@ -10,7 +10,7 @@ import json
 
 app = FastAPI()
 
-UPLOAD_DIR = "uploaded_videos"
+UPLOAD_DIR = "uploaded_files"  # Renamed folder
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 METADATA_DIR = "metadata"
@@ -22,11 +22,11 @@ def hello_world():
     return {"Message": exampleClass.get()}
 
 @app.post("/upload/")
-async def upload_video(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
-    metadata_path = os.path.join(METADATA_DIR, f"{file.filename}.json")  # Define metadata_path here
+    metadata_path = os.path.join(METADATA_DIR, f"{file.filename}.json")
 
-    # Save the uploaded video
+    # Save the uploaded file
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
@@ -47,41 +47,39 @@ async def upload_video(file: UploadFile = File(...)):
         "metadata_path": metadata_path,
     }
 
-@app.get("/video/{filename}")
-async def get_video(filename: str):
+@app.get("/file/{filename}")
+async def get_file(filename: str):
     """
-    Serve a video file from the uploaded_videos directory.
+    Serve a file (video or image) from the uploaded_files directory.
     """
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         mime_type, _ = guess_type(file_path)
-        # Default to "video/mp4" if MIME type is not detected
-        mime_type = mime_type or "video/mp4"
         return FileResponse(file_path, media_type=mime_type, filename=filename)
     return {"error": "File not found"}
 
-@app.get("/videos/")
-async def list_videos():
+@app.get("/files/")
+async def list_files():
     """
-    List all video files in the uploaded_videos directory.
+    List all files (videos and images) in the uploaded_files directory.
     """
     if not os.path.exists(UPLOAD_DIR):
-        return {"videos": []}
+        return {"files": []}
     
     files = os.listdir(UPLOAD_DIR)
-    video_files = [file for file in files if os.path.isfile(os.path.join(UPLOAD_DIR, file))]
-    return {"videos": video_files}
+    uploaded_files = [file for file in files if os.path.isfile(os.path.join(UPLOAD_DIR, file))]
+    return {"files": uploaded_files}
 
-@app.delete("/video/{filename}")
-async def delete_video(filename: str):
+@app.delete("/file/{filename}")
+async def delete_file(filename: str):
     """
-    Delete a video file from the uploaded_videos directory.
+    Delete a file (video or image) from the uploaded_files directory.
     """
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         try:
             os.remove(file_path)
-            return {"message": f"Video '{filename}' deleted successfully!"}
+            return {"message": f"File '{filename}' deleted successfully!"}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")
     else:

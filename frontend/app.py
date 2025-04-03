@@ -2,15 +2,15 @@
 import streamlit as st
 import requests
 
-UPLOAD_DIR = "uploaded_videos"
+UPLOAD_DIR = "uploaded_files"
 BASE_URL = "http://backend:8000"
 
 def main():
-    st.title("Batch videos")
+    st.title("Batch Files")
 
-    # Video upload section
-    st.header("Upload Videos")
-    uploaded_files = st.file_uploader("Choose video files", type=["mp4", "avi", "mov"], accept_multiple_files=True)
+    # File upload section
+    st.header("Upload Files")
+    uploaded_files = st.file_uploader("Choose files (videos or images)", type=["mp4", "avi", "mov", "jpg", "png"], accept_multiple_files=True)
     if uploaded_files:
         for uploaded_file in uploaded_files:
             # Send each file to the backend
@@ -25,68 +25,70 @@ def main():
     if "refresh" not in st.session_state:
         st.session_state.refresh = False
 
-    # Video display section
-    st.header("View Uploaded Videos")
+    # File display section
+    st.header("View Uploaded Files")
     if st.session_state.refresh:
-        response = requests.get(f"{BASE_URL}/videos/")
+        response = requests.get(f"{BASE_URL}/files/")
         st.session_state.refresh = False  # Reset refresh state
     else:
-        response = requests.get(f"{BASE_URL}/videos/")
+        response = requests.get(f"{BASE_URL}/files/")
 
     if response.status_code == 200:
-        video_list = response.json().get("videos", [])
-        if video_list:
-            # Create a 2-column grid layout for videos
-            for i in range(0, len(video_list), 2):
+        file_list = response.json().get("files", [])
+        if file_list:
+            # Create a 2-column grid layout for files
+            for i in range(0, len(file_list), 2):
                 cols = st.columns(2)  # Create 2 columns
-                for j, video in enumerate(video_list[i:i+2]):  # Slice 2 videos at a time
+                for j, file in enumerate(file_list[i:i+2]):  # Slice 2 files at a time
                     with cols[j]:
-                        st.write(video)  # Display the video name
-                        video_url = f"{BASE_URL}/video/{video}"
-                        response = requests.get(video_url)
+                        st.write(file)  # Display the file name
+                        file_url = f"{BASE_URL}/file/{file}"
+                        response = requests.get(file_url)
                         if response.status_code == 200:
-                            st.video(response.content)
+                            if file.lower().endswith((".mp4", ".avi", ".mov")):
+                                st.video(response.content)
+                            elif file.lower().endswith((".jpg", ".png")):
+                                st.image(response.content)
                         else:
-                            st.error(f"Failed to load video: {video}")
+                            st.error(f"Failed to load file: {file}")
 
                         # Create a horizontal layout for the delete button and metadata dropdown
                         action_cols = st.columns([1, 5])  # Adjust column widths as needed
                         with action_cols[0]:  # Column for the delete button
-                            if st.button("🗑️", key=f"delete-{video}"):
-                                delete_response = requests.delete(f"{BASE_URL}/video/{video}")
+                            if st.button("🗑️", key=f"delete-{file}"):
+                                delete_response = requests.delete(f"{BASE_URL}/file/{file}")
                                 if delete_response.status_code == 200:
-                                    st.success(f"Deleted {video} successfully!")
+                                    st.success(f"Deleted {file} successfully!")
                                     st.session_state.refresh = True  # Trigger a refresh
                                 else:
-                                    st.error(f"Failed to delete {video}: {delete_response.text}")
+                                    st.error(f"Failed to delete {file}: {delete_response.text}")
 
                         with action_cols[1]:  # Column for the metadata dropdown
-                            metadata_response = requests.get(f"{BASE_URL}/metadata/{video}")
+                            metadata_response = requests.get(f"{BASE_URL}/metadata/{file}")
                             if metadata_response.status_code == 200:
                                 metadata = metadata_response.json()
                                 with st.expander("Metadata Details"):
-                                    # Format metadata for better presentation with no spacing and smaller font
                                     for key, value in metadata.items():
                                         if isinstance(value, list):
-                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>:</p>", unsafe_allow_html=True)
+                                            st.write(f"**{key.capitalize()}**:")
                                             for item in value:
                                                 if isinstance(item, dict):
                                                     for sub_key, sub_value in item.items():
-                                                        st.markdown(f"<p style='font-size:0.8em; margin:0;'>- <strong>{sub_key.capitalize()}</strong>: {sub_value}</p>", unsafe_allow_html=True)
+                                                        st.write(f"- **{sub_key.capitalize()}**: {sub_value}")
                                                 else:
-                                                    st.markdown(f"<p style='font-size:0.8em; margin:0;'>- {item}</p>", unsafe_allow_html=True)
+                                                    st.write(f"- {item}")
                                         elif isinstance(value, dict):
-                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>:</p>", unsafe_allow_html=True)
+                                            st.write(f"**{key.capitalize()}**:")
                                             for sub_key, sub_value in value.items():
-                                                st.markdown(f"<p style='font-size:0.8em; margin:0;'>- <strong>{sub_key.capitalize()}</strong>: {sub_value}</p>", unsafe_allow_html=True)
+                                                st.write(f"- **{sub_key.capitalize()}**: {sub_value}")
                                         else:
-                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>: {value}</p>", unsafe_allow_html=True)
+                                            st.write(f"**{key.capitalize()}**: {value}")
                             else:
-                                st.error(f"Failed to fetch metadata for {video}: {metadata_response.text}")
+                                st.error(f"Failed to fetch metadata for {file}: {metadata_response.text}")
         else:
-            st.info("No videos uploaded yet.")
+            st.info("No files uploaded yet.")
     else:
-        st.error("Failed to fetch video list.")
+        st.error("Failed to fetch file list.")
 
 if __name__ == "__main__":
     main()
