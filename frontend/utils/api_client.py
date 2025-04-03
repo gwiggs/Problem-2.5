@@ -10,15 +10,20 @@ class APIClient:
     
     def _extract_metadata(self, data: Dict[str, Any], filename: str) -> FileMetadata:
         """Helper method to extract metadata from response data."""
+
+        tracks = data.get("tracks", [])
+        general_track = next((track for track in tracks if track.get("track_type") == "General"), {})
+        video_track = next((track for track in tracks if track.get("track_type") == "Video"), {})
+        
         return FileMetadata(
             filename=filename,
-            file_type=data.get("file_extension", ""),
-            size=data.get("file_size", 0),
-            created_at=data.get("file_last_modification_date", ""),
-            duration=data.get("duration", None),
-            width=data.get("width", None),
-            height=data.get("height", None),
-            format=data.get("format", None),
+            file_type=general_track.get("file_extension", ""),
+            size=general_track.get("file_size", 0),
+            created_at=general_track.get("file_last_modification_date", ""),
+            duration=general_track.get("duration", None),
+            width=video_track.get("width", None),
+            height=video_track.get("height", None),
+            format=general_track.get("format", None),
             additional_metadata=data
         )
     
