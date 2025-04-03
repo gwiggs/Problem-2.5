@@ -1,15 +1,18 @@
-# Batch Video uploader and Viewer
+<p align="center">
+  <img src="frontend/static/logo.png" alt="Data Down Under Logo" width="200">
+</p>
+
+# Batch File Uploader and Viewer
 
 ## Tool Description
 
-Upload multiple videos which will be stored in the fastapi backend
-A description of the video will then be generated based on a machine learning model trained on different videos
-You will then be able to view and play multiple videos at a time or search for different keywords from the generated text
+This tool allows you to upload and manage **videos** and **images** through a user-friendly interface. Uploaded files are stored in a **FastAPI** backend, where metadata is extracted and saved. The **Streamlit** frontend provides an intuitive way to view, play, and analyze files.
 
-This repository contains a containerized web application with a **FastAPI**
-backend and a **Streamlit** frontend. The setup uses Docker Compose to simplify
-deployment and local development, with live reloading enabled for seamless
-updates.
+Key features include:
+- **Batch Uploads**: Upload multiple files (videos or images) at once.
+- **Metadata Extraction**: Automatically extract and display metadata for each file.
+- **File Management**: View, play, and delete uploaded files.
+- **Analytics**: Gain insights into your uploaded files (coming soon).
 
 ---
 
@@ -17,93 +20,117 @@ updates.
 
 ### Start the Application
 
-Run the following command to build and start the containers:  
+Run the following command to build and start the containers:
 
-```docker-compose up```
+```bash
+docker-compose up
+```
 
-This will: 
-
-1. Build the Docker images for the FastAPI and Streamlit services.  
-2. Start the containers and serve the application.  
+This will:
+1. Build the Docker images for the FastAPI and Streamlit services.
+2. Start the containers and serve the application.
 
 ---
 
 ## Features
 
-- **FastAPI Backend**:  
-  Hosted on <http://localhost:8000>  
-  Interactive API documentation available at <http://localhost:8000/docs > 
+### **FastAPI Backend**
+- Hosted on: [http://localhost:8000](http://localhost:8000)
+- Interactive API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-- **Streamlit Frontend**:  
-  Hosted on <http://localhost:8501>  
+### **Streamlit Frontend**
+- Hosted on: [http://localhost:8501](http://localhost:8501)
 
-- **Live Reloading**:  
-  Hot reloading is enabled for both FastAPI and Streamlit during development.
+### **Core Pages**
+1. **Dashboard**:  
+   View an overview of uploaded files, including total counts of videos and images, and a list of recent uploads.
+   
+2. **Upload**:  
+   Upload multiple videos or images at once. Metadata is extracted automatically during the upload process.
+   
+3. **View Files**:  
+   Browse and interact with uploaded files. Play videos, view images, and explore metadata in a collapsible section.
+   
+4. **Analytics**:  
+   Analyze uploaded files and gain insights (feature coming soon).
 
 ---
 
 ## Prerequisites
 
-Before you start, ensure the following tools are installed on your system:
-
-- Docker  
-- Docker Compose  
+Before starting, ensure the following tools are installed on your system:
+- **Docker**
+- **Docker Compose**
 
 ---
 
 ## Access the Application
 
 - **FastAPI Backend**:  
-  Visit <http://localhost:8000> to access the API.  
-  Documentation is available at <http://localhost:8000/docs>  
+  Visit [http://localhost:8000](http://localhost:8000) to access the API.  
+  Documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 - **Streamlit Frontend**:  
-  Visit <http://localhost:8501> to interact with the frontend.  
+  Visit [http://localhost:8501](http://localhost:8501) to interact with the frontend.
 
 ---
 
 ## Development Workflow
 
 ### Live Reloading
-
-Both FastAPI and Streamlit support hot reloading out of the box. Any changes you 
-make to the code will automatically reflect in the running containers.  
+Both FastAPI and Streamlit support hot reloading. Any changes made to the code will automatically reflect in the running containers.
 
 ### Stopping the Application
+To stop the application, press `Ctrl+C` or run the following command:
 
-To stop the application, press `Ctrl+C` or run the following command:  
+```bash
+docker-compose down
+```
 
-docker-compose down  
-
-This will stop and remove the containers, but the built images will remain.  
+This will stop and remove the containers, but the built images will remain.
 
 ---
 
 ## Directory Structure
 
-The project structure is as follows:  
+The project structure is as follows:
 
-```shell
-.  
-├── backend/               # FastAPI application  
-│   ├── main.py            # FastAPI entrypoint  
-│   ├── requirements.txt   # Python dependencies for FastAPI  
-│   └── Dockerfile         # Dockerfile for FastAPI  
-├── frontend/              # Streamlit application  
-│   ├── app.py             # Streamlit entrypoint  
+```plaintext
+.
+├── backend/               # FastAPI application
+│   ├── classes/           # Backend helper classes
+│   ├── config/            # Configuration files
+│   ├── metadata/          # Metadata storage
+│   ├── models/            # Pydantic schemas
+│   ├── routers/           # API route definitions
+│   ├── services/          # Business logic services
+│   ├── uploaded_files/    # Uploaded files storage
+│   ├── uploads/           # Temporary upload storage
+│   ├── main.py            # FastAPI entrypoint
+│   ├── requirements.txt   # Python dependencies for FastAPI
+│   └── Dockerfile         # Dockerfile for FastAPI
+├── frontend/              # Streamlit application
+│   ├── classes/           # Frontend helper classes
+│   ├── components/        # UI components
+│   ├── models/            # Pydantic schemas
+│   ├── pages/             # Streamlit pages
+│   ├── routers/           # Frontend route handlers
+│   ├── static/            # Static assets (e.g., logo)
+│   ├── utils/             # Utility functions
+│   ├── app.py             # Streamlit entrypoint
+│   ├── requirements.txt   # Python dependencies for Streamlit
 │   └── Dockerfile         # Dockerfile for Streamlit
-│   └── requirements.txt   # Python dependencies for streamlit  
-├── docker-compose.yml     # Docker Compose configuration  
-└── README.md              # Project documentation  
+├── docker-compose.yml     # Docker Compose configuration
+├── README.md              # Project documentation
+└── .gitignore             # Git ignore rules
 ```
 
 ---
 
 ## Troubleshooting
 
-- Ensure Docker and Docker Compose are installed and running on your system.  
-- Verify that the required ports (8000 and 8501) are not in use by other 
-applications.  
+- Ensure Docker and Docker Compose are installed and running on your system.
+- Verify that the required ports (8000 and 8501) are not in use by other applications.
 
 ---
 
