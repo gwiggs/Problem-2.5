@@ -1,28 +1,37 @@
 # from classes.frontend_class_example import HelloWorld
 import streamlit as st
 from utils.api_client import APIClient
-from routers.file_upload import render_file_upload
-from routers.file_display import render_file_grid
+from components.layout import render_layout
+from pages.dashboard import render_dashboard
+from pages.upload import render_upload_page
+from pages.view_files import render_view_files_page
+from pages.analytics import render_analytics_page
 
 # Constants
 BASE_URL = "http://backend:8000"
 
 def main():
     """Main application entry point."""
-    st.title("Batch Files")
-    
     # Initialize API client
     api_client = APIClient(BASE_URL)
     
-    # Initialize session state for refresh
-    if "refresh" not in st.session_state:
-        st.session_state.refresh = False
+    # Initialize session state
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "Dashboard"
     
-    # Render file upload section
-    render_file_upload(api_client)
+    def render_content():
+        """Render the appropriate page based on current selection."""
+        if st.session_state.current_page == "Dashboard":
+            render_dashboard(api_client)
+        elif st.session_state.current_page == "Upload Files":
+            render_upload_page(api_client)
+        elif st.session_state.current_page == "View Files":
+            render_view_files_page(api_client)
+        elif st.session_state.current_page == "Analytics":
+            render_analytics_page(api_client)
     
-    # Render file display section
-    render_file_grid(api_client)
+    # Render the layout with the current page content
+    render_layout(render_content)
 
 if __name__ == "__main__":
     main()
