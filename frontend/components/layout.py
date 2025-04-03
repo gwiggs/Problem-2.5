@@ -1,12 +1,20 @@
 import streamlit as st
 from typing import Callable
 
+# Set Streamlit page configuration to enable wide mode
+st.set_page_config(
+    page_title="Data Down Under",
+    page_icon="🌏",
+    layout="wide",  # Enable wide mode
+)
+
 def render_header():
     """Render the header with title, icon, and settings."""
     col1, col2, col3 = st.columns([1, 4, 1])
     
     with col1:
-        st.image("static/logo.png", width=50)  # You'll need to add a logo image
+        # Increase the width of the logo
+        st.image("static/logo.png", width=150)  # Adjust the width as needed
     
     with col2:
         st.title("Data Down Under")
@@ -63,4 +71,4 @@ def render_layout(page_content: Callable):
             st.write("Settings content will go here")
     
     # Render main content
-    page_content() 
+    page_content()
