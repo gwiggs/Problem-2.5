@@ -1,12 +1,26 @@
-from typing import List#, Optional
+from typing import List, Optional, Dict, Any
 import requests
-from models.schemas import FileResponse, FileListResponse, FileMetadata#, ErrorResponse
+from models.schemas import FileResponse, FileListResponse, FileMetadata, ErrorResponse
 
 class APIClient:
     """Client for handling API communication with the backend."""
     
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
+    
+    def _extract_metadata(self, data: Dict[str, Any], filename: str) -> FileMetadata:
+        """Helper method to extract metadata from response data."""
+        return FileMetadata(
+            filename=filename,
+            file_type=data.get("file_extension", ""),
+            size=data.get("file_size", 0),
+            created_at=data.get("file_last_modification_date", ""),
+            duration=data.get("duration", None),
+            width=data.get("width", None),
+            height=data.get("height", None),
+            format=data.get("format", None),
+            additional_metadata=data
+        )
     
     def upload_file(self, file_data: bytes, filename: str, content_type: str) -> FileResponse:
         """Upload a file to the backend."""
@@ -16,7 +30,12 @@ class APIClient:
         if response.status_code != 200:
             raise ValueError(f"Upload failed: {response.text}")
             
-        return FileResponse(**response.json())
+        data = response.json()
+        return FileResponse(
+            message=data.get("message", "File uploaded successfully"),
+            filename=data.get("filename", filename),
+            metadata=self._extract_metadata(data, data.get("filename", filename))
+        )
     
     def get_files(self) -> List[str]:
         """Get list of all uploaded files."""
@@ -25,7 +44,8 @@ class APIClient:
         if response.status_code != 200:
             raise ValueError(f"Failed to fetch files: {response.text}")
             
-        return FileListResponse(**response.json()).files
+        data = response.json()
+        return data.get("files", [])
     
     def get_file(self, filename: str) -> bytes:
         """Get file content by filename."""
@@ -43,11 +63,16 @@ class APIClient:
         if response.status_code != 200:
             raise ValueError(f"Failed to fetch metadata: {response.text}")
             
-        return FileMetadata(**response.json())
+        data = response.json()
+        return self._extract_metadata(data, filename)
     
     def delete_file(self, filename: str) -> None:
         """Delete a file by filename."""
         response = requests.delete(f"{self.base_url}/file/{filename}")
         
         if response.status_code != 200:
-            raise ValueError(f"Failed to delete file: {response.text}") 
+            raise ValueError(f"Failed to delete file: {response.text}")
+            
+        data = response.json()
+        if not data.get("message", "").startswith("File deleted successfully"):
+            raise ValueError(f"Unexpected response: {data.get('message', 'Unknown error')}") 

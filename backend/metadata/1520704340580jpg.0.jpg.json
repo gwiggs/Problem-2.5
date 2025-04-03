@@ -1,0 +1,94 @@
+{
+    "tracks": [
+        {
+            "track_type": "General",
+            "count": "349",
+            "count_of_stream_of_this_kind": "1",
+            "kind_of_stream": "General",
+            "other_kind_of_stream": [
+                "General"
+            ],
+            "stream_identifier": "0",
+            "count_of_image_streams": "1",
+            "image_format_list": "JPEG",
+            "image_format_withhint_list": "JPEG",
+            "codecs_image": "JPEG",
+            "complete_name": "uploaded_files/1520704340580jpg.0.jpg",
+            "folder_name": "uploaded_files",
+            "file_name_extension": "1520704340580jpg.0.jpg",
+            "file_name": "1520704340580jpg.0",
+            "file_extension": "jpg",
+            "format": "JPEG",
+            "other_format": [
+                "JPEG"
+            ],
+            "format_extensions_usually_used": "h3d jpeg jpg jpe jps mpo",
+            "commercial_name": "JPEG",
+            "internet_media_type": "image/jpeg",
+            "file_size": 28192,
+            "other_file_size": [
+                "27.5 KiB",
+                "28 KiB",
+                "28 KiB",
+                "27.5 KiB",
+                "27.53 KiB"
+            ],
+            "stream_size": 0,
+            "other_stream_size": [
+                "0.00 Byte (0%)",
+                " Byte0",
+                "0.0 Byte",
+                "0.00 Byte",
+                "0.000 Byte",
+                "0.00 Byte (0%)"
+            ],
+            "proportion_of_this_stream": "0.00000",
+            "file_last_modification_date": "2025-04-03 11:05:06 UTC",
+            "file_last_modification_date__local": "2025-04-03 11:05:06"
+        },
+        {
+            "track_type": "Image",
+            "count": "166",
+            "count_of_stream_of_this_kind": "1",
+            "kind_of_stream": "Image",
+            "other_kind_of_stream": [
+                "Image"
+            ],
+            "stream_identifier": "0",
+            "format": "JPEG",
+            "other_format": [
+                "JPEG"
+            ],
+            "commercial_name": "JPEG",
+            "internet_media_type": "image/jpeg",
+            "width": 300,
+            "other_width": [
+                "300 pixels"
+            ],
+            "height": 400,
+            "other_height": [
+                "400 pixels"
+            ],
+            "color_space": "YUV",
+            "chroma_subsampling": "4:2:0",
+            "bit_depth": 8,
+            "other_bit_depth": [
+                "8 bits"
+            ],
+            "compression_mode": "Lossy",
+            "other_compression_mode": [
+                "Lossy"
+            ],
+            "stream_size": 28192,
+            "other_stream_size": [
+                "27.5 KiB (100%)",
+                "28 KiB",
+                "28 KiB",
+                "27.5 KiB",
+                "27.53 KiB",
+                "27.5 KiB (100%)"
+            ],
+            "proportion_of_this_stream": "1.00000"
+        }
+    ]
+}
