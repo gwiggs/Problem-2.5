@@ -6,15 +6,42 @@ import os
 from mimetypes import guess_type
 from pymediainfo import MediaInfo
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
+from routers.files import router as files_router
 
-app = FastAPI()
+app = FastAPI(
+    title="File Upload API",
+    description="API for uploading and managing files with metadata extraction",
+    version="1.0.0"
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_DIR = "uploaded_files"  # Renamed folder
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 METADATA_DIR = "metadata"
 os.makedirs(METADATA_DIR, exist_ok=True)
+
+# Include routers
+app.include_router(files_router)
+
+@app.get("/")
+async def root():
+    """Root endpoint returning API information."""
+    return {
+        "message": "Welcome to the File Upload API",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
 
 @app.get("/")
 def hello_world():
