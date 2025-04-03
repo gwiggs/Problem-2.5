@@ -1,11 +1,11 @@
-import os
+# import os
 import json
 from pathlib import Path
 from typing import List, Optional
 from fastapi import UploadFile, HTTPException
 from pymediainfo import MediaInfo
 from config.settings import UPLOAD_DIR, METADATA_DIR, MAX_FILE_SIZE
-from models.schemas import MediaMetadata, FileUploadResponse
+from models.schemas import MediaMetadata#, FileUploadResponse
 
 class FileService:
     """Service for handling file operations."""
