@@ -4,11 +4,17 @@ from fastapi.responses import FileResponse
 from classes.backend_class_example import HelloWorld
 import os
 from mimetypes import guess_type
+from pymediainfo import MediaInfo
+import json
+
 
 app = FastAPI()
 
 UPLOAD_DIR = "uploaded_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+METADATA_DIR = "metadata"
+os.makedirs(METADATA_DIR, exist_ok=True)
 
 @app.get("/")
 def hello_world():
@@ -18,9 +24,28 @@ def hello_world():
 @app.post("/upload/")
 async def upload_video(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
+    metadata_path = os.path.join(METADATA_DIR, f"{file.filename}.json")  # Define metadata_path here
+
+    # Save the uploaded video
     with open(file_path, "wb") as f:
         f.write(await file.read())
-    return {"message": f"File '{file.filename}' uploaded successfully!", "path": file_path}
+
+    try:
+        # Extract metadata
+        media_info = MediaInfo.parse(file_path)
+        metadata = media_info.to_data()
+
+        # Save metadata as JSON
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=4)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Metadata extraction failed: {str(e)}")
+
+    return {
+        "message": f"File '{file.filename}' uploaded successfully!",
+        "path": file_path,
+        "metadata_path": metadata_path,
+    }
 
 @app.get("/video/{filename}")
 async def get_video(filename: str):
@@ -61,3 +86,19 @@ async def delete_video(filename: str):
             raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")
     else:
         raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/metadata/{video}")
+async def get_metadata(video: str):
+    """
+    Retrieve metadata for a specific video.
+    """
+    metadata_path = os.path.join(METADATA_DIR, f"{video}.json")
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+            return metadata
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error reading metadata: {str(e)}")
+    else:
+        raise HTTPException(status_code=404, detail="Metadata not found")
