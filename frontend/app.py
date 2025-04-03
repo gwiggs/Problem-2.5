@@ -18,24 +18,14 @@ def main():
     # Initialize session state
     if "current_page" not in st.session_state:
         st.session_state.current_page = "Dashboard"
-    if "show_settings" not in st.session_state:
-        st.session_state.show_settings = False
-    
-    # Handle custom events
-    if st.session_state.get("component_message"):
-        message = st.session_state.component_message
-        if message["type"] == "nav-click":
-            st.session_state.current_page = message["page"]
-        elif message["type"] == "settings-toggle":
-            st.session_state.show_settings = not st.session_state.show_settings
     
     def render_content():
         """Render the appropriate page based on current selection."""
         if st.session_state.current_page == "Dashboard":
             render_dashboard(api_client)
-        elif st.session_state.current_page == "Upload Files":
+        elif st.session_state.current_page == "Upload":
             render_upload_page(api_client)
-        elif st.session_state.current_page == "View Files":
+        elif st.session_state.current_page == "View":
             render_view_files_page(api_client)
         elif st.session_state.current_page == "Analytics":
             render_analytics_page(api_client)
