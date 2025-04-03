@@ -53,7 +53,7 @@ def main():
                         action_cols = st.columns([1, 5])  # Adjust column widths as needed
                         with action_cols[0]:  # Column for the delete button
                             if st.button("🗑️", key=f"delete-{video}"):
-                                delete_response = requests.delete(f"http://backend:8000/video/{video}")
+                                delete_response = requests.delete(f"{BASE_URL}/video/{video}")
                                 if delete_response.status_code == 200:
                                     st.success(f"Deleted {video} successfully!")
                                     st.session_state.refresh = True  # Trigger a refresh
@@ -61,7 +61,7 @@ def main():
                                     st.error(f"Failed to delete {video}: {delete_response.text}")
 
                         with action_cols[1]:  # Column for the metadata dropdown
-                            metadata_response = requests.get(f"http://backend:8000/metadata/{video}")
+                            metadata_response = requests.get(f"{BASE_URL}/metadata/{video}")
                             if metadata_response.status_code == 200:
                                 metadata = metadata_response.json()
                                 with st.expander("Metadata Details"):
