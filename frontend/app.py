@@ -48,14 +48,40 @@ def main():
                         else:
                             st.error(f"Failed to load video: {video}")
 
-                        # Add a delete button
-                        if st.button("🗑️ Delete", key=f"delete-{video}"):
-                            delete_response = requests.delete(f"http://backend:8000/video/{video}")
-                            if delete_response.status_code == 200:
-                                st.success(f"Deleted {video} successfully!")
-                                st.session_state.refresh = True  # Trigger a refresh
+                        # Create a horizontal layout for the delete button and metadata dropdown
+                        action_cols = st.columns([1, 5])  # Adjust column widths as needed
+                        with action_cols[0]:  # Column for the delete button
+                            if st.button("🗑️", key=f"delete-{video}"):
+                                delete_response = requests.delete(f"http://backend:8000/video/{video}")
+                                if delete_response.status_code == 200:
+                                    st.success(f"Deleted {video} successfully!")
+                                    st.session_state.refresh = True  # Trigger a refresh
+                                else:
+                                    st.error(f"Failed to delete {video}: {delete_response.text}")
+
+                        with action_cols[1]:  # Column for the metadata dropdown
+                            metadata_response = requests.get(f"http://backend:8000/metadata/{video}")
+                            if metadata_response.status_code == 200:
+                                metadata = metadata_response.json()
+                                with st.expander("Metadata Details"):
+                                    # Format metadata for better presentation with no spacing and smaller font
+                                    for key, value in metadata.items():
+                                        if isinstance(value, list):
+                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>:</p>", unsafe_allow_html=True)
+                                            for item in value:
+                                                if isinstance(item, dict):
+                                                    for sub_key, sub_value in item.items():
+                                                        st.markdown(f"<p style='font-size:0.8em; margin:0;'>- <strong>{sub_key.capitalize()}</strong>: {sub_value}</p>", unsafe_allow_html=True)
+                                                else:
+                                                    st.markdown(f"<p style='font-size:0.8em; margin:0;'>- {item}</p>", unsafe_allow_html=True)
+                                        elif isinstance(value, dict):
+                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>:</p>", unsafe_allow_html=True)
+                                            for sub_key, sub_value in value.items():
+                                                st.markdown(f"<p style='font-size:0.8em; margin:0;'>- <strong>{sub_key.capitalize()}</strong>: {sub_value}</p>", unsafe_allow_html=True)
+                                        else:
+                                            st.markdown(f"<p style='font-size:0.8em; margin:0;'><strong>{key.capitalize()}</strong>: {value}</p>", unsafe_allow_html=True)
                             else:
-                                st.error(f"Failed to delete {video}: {delete_response.text}")
+                                st.error(f"Failed to fetch metadata for {video}: {metadata_response.text}")
         else:
             st.info("No videos uploaded yet.")
     else:
