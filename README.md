@@ -95,34 +95,50 @@ This will stop and remove the containers, but the built images will remain.
 
 The project structure is as follows:
 
-```plaintext
+```shell
 .
-├── backend/               # FastAPI application
-│   ├── classes/           # Backend helper classes
-│   ├── config/            # Configuration files
-│   ├── metadata/          # Metadata storage
-│   ├── models/            # Pydantic schemas
-│   ├── routers/           # API route definitions
-│   ├── services/          # Business logic services
-│   ├── uploaded_files/    # Uploaded files storage
-│   ├── uploads/           # Temporary upload storage
-│   ├── main.py            # FastAPI entrypoint
-│   ├── requirements.txt   # Python dependencies for FastAPI
-│   └── Dockerfile         # Dockerfile for FastAPI
-├── frontend/              # Streamlit application
-│   ├── classes/           # Frontend helper classes
-│   ├── components/        # UI components
-│   ├── models/            # Pydantic schemas
-│   ├── pages/             # Streamlit pages
-│   ├── routers/           # Frontend route handlers
-│   ├── static/            # Static assets (e.g., logo)
-│   ├── utils/             # Utility functions
-│   ├── app.py             # Streamlit entrypoint
-│   ├── requirements.txt   # Python dependencies for Streamlit
-│   └── Dockerfile         # Dockerfile for Streamlit
-├── docker-compose.yml     # Docker Compose configuration
-├── README.md              # Project documentation
-└── .gitignore             # Git ignore rules
+├── backend/                        # FastAPI application
+│   ├── classes/                    # Backend helper classes
+|   |   |──backend_class_example.py
+│   ├── config/                     # Configuration files
+|   |   |──settings.py
+│   ├── metadata/                   # Metadata storage
+│   ├── models/                     # Pydantic schemas
+|   |   |──schemas.py
+│   ├── routers/                    # API route definitions
+|   |   |──files.py
+│   ├── services/                   # Business logic services
+|   |   |──file_services.py
+│   ├── uploaded_files/             # Uploaded files storage
+│   ├── uploads/                    # Temporary upload storage
+│   ├── main.py                     # FastAPI entrypoint
+│   ├── requirements.txt            # Python dependencies for FastAPI
+│   └── Dockerfile                  # Dockerfile for FastAPI
+├── frontend/                       # Streamlit application
+│   ├── classes/                    # Frontend helper classes
+|   |   |──frontend_class_example.py
+│   ├── components/                 # UI components
+|   |   |──layout.py
+│   ├── models/                     # Pydantic schemas
+|   |   |──schemas.py
+│   ├── pages/                      # Streamlit pages
+|   |   |──analytics.py
+|   |   |──dashboard.py
+|   |   |──upload.py
+|   |   |──view_files.py
+│   ├── routers/                    # Frontend route handlers
+|   |   |──file_display.py
+|   |   |──file_upload.py
+│   ├── static/                     # Static assets (e.g., logo)
+|   |   |──logo.py
+│   ├── utils/                      # Utility functions
+|   |   |──api_client.py
+│   ├── app.py                      # Streamlit entrypoint
+│   ├── requirements.txt            # Python dependencies for Streamlit
+│   └── Dockerfile                  # Dockerfile for Streamlit
+├── docker-compose.yml              # Docker Compose configuration
+├── README.md                       # Project documentation
+└── .gitignore                      # Git ignore rules
 ```
 
 ---
