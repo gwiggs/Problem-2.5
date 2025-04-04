@@ -35,8 +35,8 @@ class FileService:
             
             # Extract relevant metadata
             tracks = data.get("tracks", [])
-            video_track = next((t for t in tracks if t["track_type"] == "Video"), {})
-            general_track = next((t for t in tracks if t["track_type"] == "General"), {})
+            general_track = next((track for track in tracks if track.get("track_type") == "General"), {})
+            video_track = next((track for track in tracks if track.get("track_type") == "Video"), {})
             
             return MediaMetadata(
                 filename=file_path.name,
