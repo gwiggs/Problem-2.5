@@ -1,0 +1,30 @@
+services:
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - ./frontend:/app
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend:/app
+  #     - ./backend/uploaded_videos:/app/uploaded_videos
+  llm:
+    build:
+      context: ./qwen2-5vl
+      dockerfile: Dockerfile
+    #image: qwenllm/qwenvl:latest
+    ports:
+      - "8100:8100"
+    # volumes:
+    #   - ./backend/uploaded_files:/app/uploaded_files
+    environment:
+      - CUDA_VISIBLE_DEVICES=0 

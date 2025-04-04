@@ -1,12 +1,13 @@
 from typing import List, Optional, Dict, Any
 import requests
-from models.schemas import FileResponse, FileListResponse, FileMetadata, ErrorResponse
+from models.schemas import (FileResponse, FileListResponse, FileMetadata, ErrorResponse, LLMPrompt, LLMResponse, LLMRequest)
 
 class APIClient:
     """Client for handling API communication with the backend."""
     
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, llm_api_url: str):
         self.base_url = base_url.rstrip('/')
+        self.llm_api_url = llm_api_url.rstrip('/')
     
     def _extract_metadata(self, data: Dict[str, Any], filename: str) -> FileMetadata:
         """Helper method to extract metadata from response data."""
@@ -81,3 +82,43 @@ class APIClient:
         data = response.json()
         if not data.get("message", "").startswith("File deleted successfully"):
             raise ValueError(f"Unexpected response: {data.get('message', 'Unknown error')}") 
+
+    # Add to existing APIClient class
+    def get_llm_prompts(self) -> List[LLMPrompt]:
+        """Get available LLM prompts."""
+        response = requests.get(f"{self.base_url}/llm/prompts")
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to fetch prompts: {response.text}")
+            
+        return [LLMPrompt(**p) for p in response.json()]
+
+    def analyze_videos(self, filenames: List[str], prompt_name: str) -> LLMResponse:
+        """Send videos for LLM analysis."""
+        # First get the prompt template
+        prompts = self.get_llm_prompts()
+        prompt = next((p for p in prompts if p.name == prompt_name), None)
+        if not prompt:
+            raise ValueError(f"Prompt '{prompt_name}' not found")
+            
+        # Prepare files for upload
+        files = []
+        for filename in filenames:
+            file_content = self.get_file(filename)
+            files.append(('files', (filename, file_content, 'application/octet-stream')))
+            
+        # Send request with form data
+        response = requests.post(
+            f"{self.llm_api_url}/process/",
+            files=files,
+            data={'prompt': prompt.template}
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Analysis failed: {response.text}")
+            
+        return LLMResponse(
+            filenames=filenames,
+            prompt_name=prompt_name,
+            analysis=response.json()['result']
+        )

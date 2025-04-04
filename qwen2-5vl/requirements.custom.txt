@@ -10,4 +10,5 @@ tensorboard
 matplotlib
 fastapi
 uvicorn
-python-multipart
+qwen_vl_utils
+multipart

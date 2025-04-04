@@ -5,21 +5,21 @@
 # based on modelscope docker image
 # registry.cn-hangzhou.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-cuda11.7.1-py38-torch2.0.1-tf1.15.5-1.8.0
 # registry.cn-beijing.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-cuda11.7.1-py38-torch2.0.1-tf1.15.5-1.8.0
-FROM qwenllm/qwenvl:latest
+FROM qwen2-vl:latest
 
-ARG workdir=/var/app
-RUN mkdir -p ${workdir}
+#ARG workdir=/var/app
+#RUN mkdir -p ${workdir}
 
-RUN git lfs install
+#RUN git lfs install
 
-WORKDIR ${workdir}
-COPY requirements.txt ./
+WORKDIR /app
+COPY requirements.txt llm_api.py /app
 
 # Install Qwen dependencies
-#RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Install webUI dependencies
-WORKDIR ${workdir}
+#WORKDIR ${workdir}
 #RUN pip install -r requirements_web_demo.txt
 
 # Offline mode, check https://huggingface.co/docs/transformers/v4.15.0/installation#offline-mode
@@ -27,11 +27,11 @@ WORKDIR ${workdir}
 #ENV TRANSFORMERS_OFFLINE=1
 
 # set TZ, make logs dir, and expose port 8080
-RUN mkdir -p ${workdir}/logs && chmod 777 ${workdir}/logs
-VOLUME /var/app/logs
+#RUN mkdir -p ${workdir}/logs && chmod 777 ${workdir}/logs
+#VOLUME /var/app/logs
 
 # create user 20001
-RUN useradd -r -m appuser -u 20001 -g 0
+#RUN useradd -r -m appuser -u 20001 -g 0
 
 #WORKDIR ${workdir}
 # copy model
@@ -44,4 +44,5 @@ RUN useradd -r -m appuser -u 20001 -g 0
 #COPY --chown=20001:20001 web_demo_mm.py ./
 
 EXPOSE 8100
-CMD ["python3", "--server-name", "0.0.0.0", "--server-port", "8100"]
+CMD ["uvicorn", "llm_api:app", "--host", "0.0.0.0", "--port", "8100"]
+#CMD ["python3", "llm_api.py", "--server.address=0.0.0.0", "--server.port=8100"]

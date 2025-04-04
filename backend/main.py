@@ -7,6 +7,7 @@ from mimetypes import guess_type
 from pymediainfo import MediaInfo
 import json
 from fastapi.middleware.cors import CORSMiddleware
+from routers.llm import router as llm_router
 
 from routers.files import router as files_router
 
@@ -33,6 +34,7 @@ os.makedirs(METADATA_DIR, exist_ok=True)
 
 # Include routers
 app.include_router(files_router)
+app.include_router(llm_router)
 
 @app.get("/")
 async def root():

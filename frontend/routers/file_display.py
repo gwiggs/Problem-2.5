@@ -2,6 +2,7 @@
 import streamlit as st
 from utils.api_client import APIClient
 from models.schemas import FileMetadata
+from models.file_formats import is_video_format, is_image_format
 
 def render_metadata(metadata: FileMetadata) -> None:
     """Render file metadata in an expander."""
@@ -48,9 +49,9 @@ def render_file_grid(api_client: APIClient) -> None:
                 
                 try:
                     file_content = api_client.get_file(filename)
-                    if filename.lower().endswith((".mp4", ".avi", ".mov")):
+                    if is_video_format(filename):
                         st.video(file_content)
-                    elif filename.lower().endswith((".jpg", ".png")):
+                    elif is_image_format(filename):
                         st.image(file_content)
                 except ValueError as e:
                     st.error(f"Failed to load file: {str(e)}")

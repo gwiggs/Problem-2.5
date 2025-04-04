@@ -8,24 +8,24 @@ from models.schemas import LLMPrompt, LLMResponse
 #Define default prompts
 DEFAULT_PROMPTS = {
     "transcription": LLMPrompt(
-    name="Transcription",
-    description="Transcribe the audio in the video file.",
-    prompt="You are a transcription service. You will be given a video file and you need to transcribe it into text.",
+        name="Transcription",
+        description="Transcribe the audio in the video file.",
+        template="You are a transcription service. You will be given a video file and you need to transcribe it into text.",
     ),
     "summary": LLMPrompt(
         name="Summary",
         description="Summarize the content of the video file.",
-        prompt="You are a summary service. You will be given a video file and you need to summarize it into a few sentences.",
+        template="You are a summary service. You will be given a video file and you need to summarize it into a few sentences.",
     ),
     "describe_video": LLMPrompt(
         name="Describe Video",
         description="Describe the content of the video file.",
-        prompt="You are a description service. You will be given a video file and you need to describe it in detail.",
+        template="You are a description service. You will be given a video file and you need to describe it in detail.",
     ),
     "analyze_sentiment": LLMPrompt(
         name="Analyze Sentiment",
         description="Analyze the sentiment of the video file.",
-        prompt="You are a sentiment analysis service. You will be given a video file and you need to analyze the sentiment of the video file.",
+        template="You are a sentiment analysis service. You will be given a video file and you need to analyze the sentiment of the video file.",
     )
 }
 

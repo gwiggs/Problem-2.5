@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -28,3 +28,20 @@ class ErrorResponse(BaseModel):
     """Schema for error responses."""
     detail: str
     status_code: int 
+
+class LLMPrompt(BaseModel):
+    """Schema for LLM prompts."""
+    name: str
+    description: str
+    template: str
+
+class LLMRequest(BaseModel):
+    """Schema for LLM analysis request."""
+    filenames: List[str]
+    prompt_name: str
+
+class LLMResponse(BaseModel):
+    """Schema for LLM analysis response."""
+    filenames: List[str]
+    prompt_name: str
+    analysis: str

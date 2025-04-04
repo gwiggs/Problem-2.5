@@ -18,3 +18,6 @@ ALLOWED_EXTENSIONS = {
 
 # Maximum file size (10MB)
 MAX_FILE_SIZE = 10 * 1024 * 1024 
+
+# LLM service URL
+LLM_SERVICE_URL = "http://localhost:8100"

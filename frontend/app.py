@@ -9,11 +9,12 @@ from pages.analytics import render_analytics_page
 
 # Constants
 BASE_URL = "http://backend:8000"
+LLM_API_URL = "http://llm:8100"
 
 def main():
     """Main application entry point."""
     # Initialize API client
-    api_client = APIClient(BASE_URL)
+    api_client = APIClient(BASE_URL, LLM_API_URL)
     
     # Initialize session state
     if "current_page" not in st.session_state:

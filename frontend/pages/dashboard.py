@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.api_client import APIClient
+from models.file_formats import is_video_format, is_image_format
 
 def render_dashboard(api_client: APIClient):
     """Render the dashboard page."""
@@ -15,11 +16,11 @@ def render_dashboard(api_client: APIClient):
             st.metric("Total Files", len(files))
         
         with col2:
-            video_count = sum(1 for f in files if f.lower().endswith((".mp4", ".avi", ".mov")))
+            video_count = sum(1 for f in files if is_video_format(f))
             st.metric("Video Files", video_count)
         
         with col3:
-            image_count = sum(1 for f in files if f.lower().endswith((".jpg", ".jpeg", ".png")))
+            image_count = sum(1 for f in files if is_image_format(f))
             st.metric("Image Files", image_count)
             
         # Recent uploads

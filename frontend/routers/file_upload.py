@@ -2,14 +2,18 @@ from typing import List, Optional
 import streamlit as st
 from utils.api_client import APIClient
 from models.schemas import FileResponse
+from models.file_formats import get_all_video_formats, get_all_image_formats
 
 def render_file_upload(api_client: APIClient) -> Optional[List[FileResponse]]:
     """Render the file upload section and handle uploads."""
     st.header("Upload Files")
     
+    # Combine video and image formats for the file uploader
+    allowed_formats = get_all_video_formats() + get_all_image_formats()
+    
     uploaded_files = st.file_uploader(
         "Choose files (videos or images)",
-        type=["mp4", "avi", "mov", "jpg", "png"],
+        type=allowed_formats,
         accept_multiple_files=True
     )
     
