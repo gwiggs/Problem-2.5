@@ -22,13 +22,10 @@ services:
       context: ./llm
       dockerfile: Dockerfile
     #image: qwenllm/qwenvl:latest
-    network_mode: "host"
-    # ports:
-    #   - "8100:8100"
+    #network_mode: "host"
+    ports:
+       - "8100:8100"
     volumes:
       - ./backend/uploaded_files:/app/uploaded_files
     environment:
       - CUDA_VISIBLE_DEVICES=0
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
