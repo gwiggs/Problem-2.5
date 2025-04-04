@@ -1,6 +1,6 @@
 import httpx
 from typing import List
-from pathlib import Path
+#from pathlib import Path
 from fastapi import HTTPException
 from config.settings import LLM_SERVICE_URL
 from models.schemas import LLMPrompt, LLMResponse

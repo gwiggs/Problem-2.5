@@ -1,6 +1,6 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any#, Optional
 import requests
-from models.schemas import FileResponse, FileListResponse, FileMetadata, ErrorResponse
+from models.schemas import FileResponse, FileMetadata #FileListResponse, FileMetadata, ErrorResponse
 
 class APIClient:
     """Client for handling API communication with the backend."""
