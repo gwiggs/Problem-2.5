@@ -7,6 +7,13 @@ services:
       - "8501:8501"
     volumes:
       - ./frontend:/app
+    # depends_on:
+    #   llm:
+    #     condition: service_healthy
+    networks:
+      - app_network
+    restart: "no"
+    stop_grace_period: 30s
 
   backend:
     build:
@@ -17,15 +24,48 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/uploaded_videos:/app/uploaded_videos
+    # depends_on:
+    #   llm:
+    #     condition: service_healthy
+    networks:
+      - app_network
+    restart: "no"
+    stop_grace_period: 30s
+
   llm:
     build:
       context: ./llm
       dockerfile: Dockerfile
-    #image: qwenllm/qwenvl:latest
-    #network_mode: "host"
     ports:
-       - "8100:8100"
+      - "8100:8100"
     volumes:
       - ./backend/uploaded_files:/app/uploaded_files
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./llm/Qwen2.5-VL-7B-Instruct:/app/Qwen2.5-VL-7B-Instruct
     environment:
       - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || (./shutdown.sh && exit 1)"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    networks:
+      - app_network
+    runtime: nvidia
+    restart: "no"
+    stop_grace_period: 60s
+
+networks:
+  app_network:
+    driver: bridge
+    name: app_network

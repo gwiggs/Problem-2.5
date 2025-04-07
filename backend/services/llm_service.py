@@ -1,33 +1,134 @@
 import httpx
-from typing import List
+from typing import List, Dict
 from pathlib import Path
 from fastapi import HTTPException
 from config.settings import LLM_SERVICE_URL
 from models.schemas import LLMPrompt, LLMResponse
+from pydantic import BaseModel
 
 #Define default prompts
 DEFAULT_PROMPTS = {
-    "transcription": LLMPrompt(
-        name="Transcription",
-        description="Transcribe the audio in the video file.",
-        template="You are a transcription service. You will be given a video file and you need to transcribe it into text.",
+    "security_analysis": LLMPrompt(
+        name="Security Analysis",
+        description="Comprehensive security analysis of media content",
+        template="""Analyze this media for security concerns. Provide a structured analysis covering:
+1. Violence/Aggression: Identify any violent acts, aggressive behavior, or threatening gestures
+2. Weapons/Military: Note any firearms, military equipment, tactical gear, or weapons
+3. Face Coverage: Identify if individuals have concealed or obscured their faces
+4. Location Anomalies: Note if individuals appear to be in unexpected locations based on apparent ethnicity/dress
+5. Group Affiliations: Identify any visible symbols, flags, or emblems associated with known extremist groups
+6. Security Rating: Provide a risk assessment (Low/Medium/High) with explanation
+
+Format the response as a structured report with clear sections."""
     ),
-    "summary": LLMPrompt(
-        name="Summary",
-        description="Summarize the content of the video file.",
-        template="You are a summary service. You will be given a video file and you need to summarize it into a few sentences.",
+    
+    "document_extraction": LLMPrompt(
+        name="Document Detection",
+        description="Detect and analyze visible documents in media",
+        template="""Identify and analyze any visible documents in this media. Focus on:
+1. Document Type: Identify the type of documents visible (ID cards, passports, letters, etc.)
+2. Document Details: Note any visible text, numbers, or identifying information
+3. Document Location: Describe where in the frame documents appear
+4. Authenticity Indicators: Note any visible security features or potential signs of alteration
+5. Privacy Concerns: Flag any sensitive personal information visible
+
+Provide timestamps for videos where documents are visible."""
     ),
-    "describe_video": LLMPrompt(
-        name="Describe Video",
-        description="Describe the content of the video file.",
-        template="You are a description service. You will be given a video file and you need to describe it in detail.",
+    
+    "political_content": LLMPrompt(
+        name="Political Content Analysis",
+        description="Analyze political content and messaging",
+        template="""Analyze this media for political content and messaging. Consider:
+1. Political Symbols: Identify flags, emblems, or symbols of political movements
+2. Political Messages: Note any visible text, slogans, or messages
+3. Political Context: Describe any political events or gatherings shown
+4. Political Figures: Identify any known political figures present
+5. Political Sentiment: Assess the overall political tone (neutral/supportive/opposing)
+
+Provide an objective analysis without political bias."""
     ),
-    "analyze_sentiment": LLMPrompt(
-        name="Analyze Sentiment",
-        description="Analyze the sentiment of the video file.",
-        template="You are a sentiment analysis service. You will be given a video file and you need to analyze the sentiment of the video file.",
+    
+    "facial_analysis": LLMPrompt(
+        name="Facial Analysis",
+        description="Detailed analysis of visible faces",
+        template="""Analyze visible faces in this media. For each distinct person:
+1. Face Visibility: Note if face is clearly visible, partially visible, or obscured
+2. Facial Features: Describe notable features while maintaining ethical considerations
+3. Facial Expression: Describe emotional expression
+4. Face Location: Note position in frame
+5. Face Timestamps: For videos, note when faces appear/disappear
+6. Identity Protection: Flag if faces appear to be intentionally concealed
+
+Maintain privacy and ethical considerations in descriptions."""
+    ),
+    
+    "comprehensive_description": LLMPrompt(
+        name="Comprehensive Description",
+        description="Detailed description of media content",
+        template="""Provide a comprehensive description of this media. Include:
+1. Scene Overview: Describe the overall setting and context
+2. People Present: Number of people, general appearance, activities
+3. Notable Objects: Identify significant items or equipment
+4. Environmental Details: Describe location, time of day, weather conditions
+5. Activities: Describe main actions or events occurring
+6. Audio Content: For videos, describe any significant sounds or speech
+7. Sequence of Events: For videos, provide a timeline of major events
+
+Maintain objective, factual descriptions."""
+    ),
+    
+    "sentiment_analysis": LLMPrompt(
+        name="Sentiment Analysis",
+        description="Analyze emotional and behavioral content",
+        template="""Analyze the emotional and behavioral content in this media:
+1. Overall Mood: Describe the predominant emotional tone
+2. Individual Emotions: Note emotions displayed by specific individuals
+3. Group Dynamics: Analyze interactions and collective behavior
+4. Behavioral Indicators: Note any concerning behavioral patterns
+5. Environmental Mood: Describe how setting/context affects sentiment
+6. Temporal Changes: For videos, note how emotions/behavior change over time
+
+Provide specific examples supporting your analysis."""
+    ),
+    
+    "threat_assessment": LLMPrompt(
+        name="Threat Assessment",
+        description="Comprehensive threat and risk analysis",
+        template="""Conduct a detailed threat assessment of this media content:
+1. Immediate Threats: Identify any clear and present dangers
+2. Behavioral Indicators: Note concerning patterns or behaviors
+3. Environmental Risks: Assess location-based security concerns
+4. Group Dynamics: Analyze crowd behavior and potential risks
+5. Weapons/Tools: Identify any items that could pose security risks
+6. Risk Level: Provide an overall threat assessment (Low/Medium/High)
+7. Recommendations: Suggest appropriate security responses
+
+Maintain professional, objective analysis."""
+    ),
+    
+    "temporal_analysis": LLMPrompt(
+        name="Temporal Analysis",
+        description="Time-based analysis of video content",
+        template="""Provide a detailed timeline analysis of this video:
+1. Key Events: List significant events with timestamps
+2. People Tracking: Note when individuals enter/exit frame
+3. Behavioral Changes: Track changes in behavior/mood over time
+4. Environmental Changes: Note changes in setting/context
+5. Critical Moments: Identify timestamps requiring closer review
+6. Activity Patterns: Identify repeated behaviors or patterns
+
+Format as a chronological timeline with clear timestamps."""
     )
 }
+
+class SecurityAnalysisResponse(BaseModel):
+    risk_level: str
+    violence_detected: bool
+    weapons_detected: bool
+    face_concealment: bool
+    location_anomalies: bool
+    group_affiliations: List[str]
+    details: Dict[str, str]
 
 class LLMService:
     """Service for interacting with the LLM."""

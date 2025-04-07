@@ -1,38 +1,53 @@
 # FROM python:3.11-slim
 FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    git \
+    git-lfs \
+    wget \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1-mesa-glx \
+    ninja-build \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
 WORKDIR /app
-#RUN apt-get update 
-#&& apt-get install -y git git-lfs python3 python3-pip python3-dev wget software-properties-common ccache && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git git-lfs python3 python3-pip python3-dev wget software-properties-common ccache && \
-    rm -rf /var/lib/apt/lists/*
-    
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.26.1/cmake-3.26.1-Linux-x86_64.sh \
-    -q -O /tmp/cmake-install.sh \
-    && chmod u+x /tmp/cmake-install.sh \
-    && mkdir /opt/cmake-3.26.1 \
-    && /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-3.26.1 \
-    && rm /tmp/cmake-install.sh \
-    && ln -s /opt/cmake-3.26.1/bin/* /usr/local/bin
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+#RUN pip install https://github.com/ModelCloud/GPTQModel/releases/download/v2.2.0/gptqmodel-2.2.0+cu121torch2.1-cp310-cp310-linux_x86_64.whl
 
-RUN git lfs install
+# Install Python dependencies
+RUN pip3 install -U pip setuptools wheel && \
+    pip3 install torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cu121
+RUN pip3 install -r requirements.txt 
+RUN pip3 install --upgrade safetensors
 
+#RUN pip install -v gptqmodel --no-build-isolation
+# Copy the rest of the application
+COPY . .
 
-COPY requirements.txt llm_api.py .
-RUN pip install -r requirements.txt
-RUN mkdir -p ./Qwen2.5-VL-7B-Instruct
-WORKDIR /app/Qwen2.5-VL-7B-Instruct
-COPY ./Qwen2.5-VL-7B-Instruct .
-#RUN git clone https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
+# Make check_model.sh executable
+RUN chmod +x check_model.sh
 
-WORKDIR /app
-COPY llm_api.py .
+# Run check_model.sh during build
+RUN ./check_model.sh
 
-RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-RUN pip3 install git+https://github.com/huggingface/transformers@f3f6c86582611976e72be054675e2bf0abb5f775
-
+# Expose port
 EXPOSE 8100
+
+# Command to run the application
 CMD ["uvicorn", "llm_api:app", "--host", "0.0.0.0", "--port", "8100"]
