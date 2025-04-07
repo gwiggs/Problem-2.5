@@ -1,0 +1,47 @@
+{
+  "security_analysis": {
+    "name": "Security Analysis",
+    "description": "Comprehensive security analysis of media content",
+    "template": "Analyze this media for security concerns. Provide a structured analysis covering:\n1. Violence/Aggression: Identify any violent acts, aggressive behavior, or threatening gestures\n2. Weapons/Military: Note any firearms, military equipment, tactical gear, or weapons\n3. Face Coverage: Identify if individuals have concealed or obscured their faces\n4. Location Anomalies: Note if individuals appear to be in unexpected locations based on apparent ethnicity/dress\n5. Group Affiliations: Identify any visible symbols, flags, or emblems associated with known extremist groups\n6. Security Rating: Provide a risk assessment (Low/Medium/High) with explanation\n\nFormat the response as a structured report with clear sections."
+  },
+  "document_extraction": {
+    "name": "Document Detection",
+    "description": "Detect and analyze visible documents in media",
+    "template": "Identify and analyze any visible documents in this media. Focus on:\n1. Document Type: Identify the type of documents visible (ID cards, passports, letters, etc.)\n2. Document Details: Note any visible text, numbers, or identifying information\n3. Document Location: Describe where in the frame documents appear\n4. Authenticity Indicators: Note any visible security features or potential signs of alteration\n5. Privacy Concerns: Flag any sensitive personal information visible\n\nProvide timestamps for videos where documents are visible."
+  },
+  "political_content": {
+    "name": "Political Content Analysis",
+    "description": "Analyze political content and messaging",
+    "template": "Analyze this media for political content and messaging. Consider:\n1. Political Symbols: Identify flags, emblems, or symbols of political movements\n2. Political Messages: Note any visible text, slogans, or messages\n3. Political Context: Describe any political events or gatherings shown\n4. Political Figures: Identify any known political figures present\n5. Political Sentiment: Assess the overall political tone (neutral/supportive/opposing)\n\nProvide an objective analysis without political bias."
+  },
+  "facial_analysis": {
+    "name": "Facial Analysis",
+    "description": "Detailed analysis of visible faces",
+    "template": "Analyze visible faces in this media. For each distinct person:\n1. Face Visibility: Note if face is clearly visible, partially visible, or obscured\n2. Facial Features: Describe notable features while maintaining ethical considerations\n3. Facial Expression: Describe emotional expression\n4. Face Location: Note position in frame\n5. Face Timestamps: For videos, note when faces appear/disappear\n6. Identity Protection: Flag if faces appear to be intentionally concealed\n\nMaintain privacy and ethical considerations in descriptions."
+  },
+  "comprehensive_description": {
+    "name": "Comprehensive Description",
+    "description": "Detailed description of media content",
+    "template": "Provide a comprehensive description of this media. Include:\n1. Scene Overview: Describe the overall setting and context\n2. People Present: Number of people, general appearance, activities\n3. Notable Objects: Identify significant items or equipment\n4. Environmental Details: Describe location, time of day, weather conditions\n5. Activities: Describe main actions or events occurring\n6. Audio Content: For videos, describe any significant sounds or speech\n7. Sequence of Events: For videos, provide a timeline of major events\n\nMaintain objective, factual descriptions."
+  },
+  "sentiment_analysis": {
+    "name": "Sentiment Analysis",
+    "description": "Analyze emotional and behavioral content",
+    "template": "Analyze the emotional and behavioral content in this media:\n1. Overall Mood: Describe the predominant emotional tone\n2. Individual Emotions: Note emotions displayed by specific individuals\n3. Group Dynamics: Analyze interactions and collective behavior\n4. Behavioral Indicators: Note any concerning behavioral patterns\n5. Environmental Mood: Describe how setting/context affects sentiment\n6. Temporal Changes: For videos, note how emotions/behavior change over time\n\nProvide specific examples supporting your analysis."
+  },
+  "threat_assessment": {
+    "name": "Threat Assessment",
+    "description": "Comprehensive threat and risk analysis",
+    "template": "Conduct a detailed threat assessment of this media content:\n1. Immediate Threats: Identify any clear and present dangers\n2. Behavioral Indicators: Note concerning patterns or behaviors\n3. Environmental Risks: Assess location-based security concerns\n4. Group Dynamics: Analyze crowd behavior and potential risks\n5. Weapons/Tools: Identify any items that could pose security risks\n6. Risk Level: Provide an overall threat assessment (Low/Medium/High)\n7. Recommendations: Suggest appropriate security responses\n\nMaintain professional, objective analysis."
+  },
+  "temporal_analysis": {
+    "name": "Temporal Analysis",
+    "description": "Time-based analysis of video content",
+    "template": "Provide a detailed timeline analysis of this video:\n1. Key Events: List significant events with timestamps\n2. People Tracking: Note when individuals enter/exit frame\n3. Behavioral Changes: Track changes in behavior/mood over time\n4. Environmental Changes: Note changes in setting/context\n5. Critical Moments: Identify timestamps requiring closer review\n6. Activity Patterns: Identify repeated behaviors or patterns\n\nFormat as a chronological timeline with clear timestamps."
+  },
+  "General Overview": {
+    "name": "General Overview",
+    "description": "General description of the media",
+    "template": "Watch the video and provide a comprehensive analysis and description of its content.\n\n    Begin with a one-line overview summarizing the main theme or subject of the video.\n\n    Follow with a detailed description, covering the following aspects:\n\n    Setting and context: Where and when does the video take place? What\u2019s the environment like?\n\n    People/Characters involved: Who appears in the video? What are their roles, emotions, or actions?\n\n    Visual and audio elements: Mention any significant visuals (e.g., colors, objects, movements) or audio (e.g., music, speech, ambient noise) that contribute to the message or mood.\n\n    Intended message or purpose: What is the video trying to convey, promote, or communicate?\n\nBe as objective and specific as possible, and avoid assumptions that aren\u2019t supported by the video content."
+  }
+}

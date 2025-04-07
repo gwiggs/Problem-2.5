@@ -13,7 +13,15 @@ from pydantic import BaseModel
 
 from qwen_vl_utils import process_vision_info
 
-from app.core.config import TEMP_DIR, MODEL_PATH
+from app.core.config import (
+    TEMP_DIR, 
+    MODEL_PATH,
+    MAX_NEW_TOKENS,
+    TEMPERATURE,
+    TOP_P,
+    REPETITION_PENALTY
+)
+
 from app.core.model_manager import ModelManager
 from app.models.analysis_schema import (
     AnalysisResponse,
@@ -71,150 +79,125 @@ async def generate_response(prompt: str, media_files: List[str], media_types: Li
             torch.cuda.empty_cache()
             log_memory_usage()
         
-        # Parameters for video processing
-        total_pixels = 10240 * 28 * 28  # Same as reference implementation
-        min_pixels = 16 * 28 * 28       # Same as reference implementation
-        
         # Prepare messages in chat format
         messages = []
         image_inputs = []
         video_inputs = []
         fps_list = []
         
-        # Process media files in smaller batches
-        batch_size = 2  # Reduced batch size
-        for i in range(0, len(media_files), batch_size):
-            batch_files = media_files[i:i + batch_size]
-            batch_types = media_types[i:i + batch_size]
-            
-            for file_path, media_type in zip(batch_files, batch_types):
-                if media_type == "video":
-                    # Process video frames with reduced frame count and resolution
-                    frames, timestamps, total_frames = process_video_frames(
-                        file_path, 
-                        max_frames=16,  # Further limit to 16 frames
-                        target_size=(224, 224)  # Further reduce resolution
-                    )
-                    
-                    # Calculate FPS using the last timestamp
-                    if len(timestamps) > 0:
-                        last_timestamp = timestamps[-1]
-                        fps = len(frames) / last_timestamp if last_timestamp > 0 else 30.0
-                    else:
-                        fps = 30.0
-                    
-                    message = {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"video": file_path, "total_pixels": total_pixels, "min_pixels": min_pixels}
-                        ]
-                    }
-                    messages.append(message)
-                    
-                    # Convert frames to tensor format and move to GPU immediately
-                    with torch.cuda.amp.autocast():
-                        video_array = np.array(frames)
-                        video_tensor = torch.from_numpy(video_array).permute(0, 3, 1, 2).to(device)  # [T, C, H, W]
-                        video_inputs.append(video_tensor)
-                        fps_list.append(fps)
-                    
-                    # Log video frame info
-                    num_frames, _, height, width = video_tensor.shape
-                    logger.info(f"Video input shape: {video_tensor.shape}")
-                    logger.info(f"Number of video tokens: {int(num_frames / 2 * height / 28 * width / 28)}")
-                    
+        # Process media files
+        for file_path, media_type in zip(media_files, media_types):
+            if media_type == "video":
+                # Process video frames
+                frames, timestamps, total_frames = process_video_frames(
+                    file_path, 
+                    max_frames=16,  # Limit to 16 frames
+                    target_size=(224, 224)  # Resize to standard size
+                )
+                
+                # Calculate FPS
+                if len(timestamps) > 0:
+                    last_timestamp = timestamps[-1]
+                    fps = len(frames) / last_timestamp if last_timestamp > 0 else 30.0
                 else:
-                    # Process image and move to GPU immediately
-                    with torch.cuda.amp.autocast():
-                        image = process_image(file_path)
-                        image_tensor = torch.from_numpy(np.array(image)).permute(2, 0, 1).to(device)
-                        image_inputs.append(image_tensor)
-                        message = {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt},
-                                {"image": image}
-                            ]
+                    fps = 30.0
+                
+                # Convert frames to tensor format
+                video_array = np.array(frames)
+                video_tensor = torch.from_numpy(video_array).permute(0, 3, 1, 2).to(device)  # [T, C, H, W]
+                video_inputs.append(video_tensor)
+                fps_list.append(fps)
+                
+                # Log video frame info
+                num_frames, _, height, width = video_tensor.shape
+                logger.info(f"Video input shape: {video_tensor.shape}")
+                
+                # Add video message
+                message = {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "video",
+                            "video": {
+                                "frames": video_tensor,
+                                "fps": fps,
+                                "total_frames": total_frames
+                            }
                         }
-                        messages.append(message)
-            
-            # Clear GPU memory after processing each batch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                log_memory_usage()
+                    ]
+                }
+                messages.append(message)
+                
+            elif media_type == "image":
+                # Process image
+                image = process_image(file_path)
+                image_tensor = torch.from_numpy(np.array(image)).permute(2, 0, 1).to(device)
+                image_inputs.append(image_tensor)
+                
+                # Add image message
+                message = {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image", "image": image_tensor}
+                    ]
+                }
+                messages.append(message)
         
-        # Add system message with minimal guidance
+        # Add system message
         system_message = {
             "role": "system",
             "content": "You are a helpful assistant that analyzes media content. Provide your analysis based on the user's prompt."
         }
         messages.insert(0, system_message)
         
-        # Apply chat template with GPU acceleration
-        with torch.cuda.amp.autocast():
-            text = processor.apply_chat_template(
-                messages, 
-                tokenize=False, 
-                add_generation_prompt=True
+        # Apply chat template
+        text = processor.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+        
+        # Process inputs
+        processor_output = processor(
+            text=[text],
+            images=image_inputs if image_inputs else None,
+            videos=video_inputs if video_inputs else None,
+            fps=fps_list if fps_list else None,
+            return_tensors="pt"
+        )
+        
+        # Move all tensors to device
+        inputs = {
+            k: v.to(device) if isinstance(v, torch.Tensor) else v
+            for k, v in processor_output.items()
+        }
+        
+        # Generate response
+        with torch.inference_mode():
+            output_ids = model.generate(
+                **inputs,
+                max_new_tokens=MAX_NEW_TOKENS,
+                do_sample=True,
+                temperature=TEMPERATURE,
+                top_p=TOP_P,
+                repetition_penalty=REPETITION_PENALTY
             )
         
-        # Initialize GradScaler for mixed precision
-        scaler = GradScaler()
+        # Extract generated response
+        input_length = inputs.get('input_ids', inputs.get('pixel_values', torch.tensor([]))).shape[1]
+        generated_ids = output_ids[:, input_length:]
+        response = processor.batch_decode(
+            generated_ids, 
+            skip_special_tokens=True, 
+            clean_up_tokenization_spaces=True
+        )[0]
         
-        # Process all inputs with mixed precision and batch processing
-        with torch.inference_mode(), torch.cuda.amp.autocast():
-            for i in range(0, len(video_inputs), batch_size):
-                batch_videos = video_inputs[i:i + batch_size]
-                batch_fps = fps_list[i:i + batch_size]
-                
-                # Process inputs directly on GPU
-                processor_output = processor(
-                    text=[text],
-                    images=image_inputs if image_inputs else None,
-                    videos=batch_videos,
-                    fps=batch_fps,
-                    padding=True,
-                    return_tensors="pt"
-                )
-                
-                # Move all tensors to device
-                inputs = {
-                    k: v.to(device) if isinstance(v, torch.Tensor) else v
-                    for k, v in processor_output.items()
-                }
-                
-                # Generate response for batch
-                with torch.cuda.amp.autocast():
-                    output_ids = model.generate(
-                        **inputs,
-                        max_new_tokens=1024,
-                        do_sample=True,
-                        temperature=0.7,
-                        top_p=0.9,
-                        repetition_penalty=1.1,
-                        use_cache=True  # Enable KV cache for faster generation
-                    )
-                
-                # Extract only the generated part
-                input_length = inputs.get('input_ids', inputs.get('pixel_values', torch.tensor([]))).shape[1]
-                generated_ids = output_ids[:, input_length:]
-                response = processor.batch_decode(
-                    generated_ids, 
-                    skip_special_tokens=True, 
-                    clean_up_tokenization_spaces=True
-                )[0]
-                
-                # Clear GPU memory after each batch
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    log_memory_usage()
+        # Log response for debugging
+        logger.info(f"Raw model output: {response}")
         
-        if torch.cuda.is_available():
-            log_memory_usage()
-            torch.cuda.empty_cache()
-        
-        # Return the raw response
+        # Return response with metadata
         return {
             "result": {
                 "raw_response": response,
