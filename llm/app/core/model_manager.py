@@ -2,7 +2,7 @@ import logging
 import os
 import torch
 import traceback
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, AutoTokenizer, BitsAndBytesConfig
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM
 
 from app.core.config import MODEL_PATH
 from app.utils.gpu import check_gpu_availability, log_gpu_info
@@ -59,50 +59,8 @@ class ModelManager:
         use_flash_attention = self._check_flash_attention()
         
         # Initialize model with explicit device placement
-        logger.info("Step 3: Loading model from pretrained")
-        logger.info(f"Model path: {os.path.abspath(MODEL_PATH)}")
-        logger.info(f"Model path exists: {os.path.exists(MODEL_PATH)}")
+        self.load_model()
         
-        if os.path.exists(MODEL_PATH):
-            logger.info(f"Model path contents: {os.listdir(MODEL_PATH)}")
-        else:
-            logger.error(f"Model path does not exist: {MODEL_PATH}")
-            logger.info("Current directory contents:")
-            logger.info(os.listdir("/app"))
-            logger.info("Attempting to create model directory...")
-            os.makedirs(MODEL_PATH, exist_ok=True)
-            logger.info(f"Model directory created: {os.path.exists(MODEL_PATH)}")
-        
-        try:
-            # Try primary loading method
-            self.model = load_model_primary(MODEL_PATH, gpu_available, use_flash_attention, self.bnb_config)
-            logger.info("Model loaded successfully with primary method")
-        except Exception as model_error:
-            logger.error(f"Failed to load model with primary method: {str(model_error)}")
-            logger.error(traceback.format_exc())
-            
-            try:
-                # Try alternative loading method
-                self.model = load_model_alternative(MODEL_PATH, gpu_available, use_flash_attention, self.bnb_config, self.device)
-                logger.info("Model loaded successfully with alternative method")
-            except Exception as alt_error:
-                logger.error(f"Failed to load model with alternative method: {str(alt_error)}")
-                logger.error(traceback.format_exc())
-                
-                try:
-                    # Try minimal loading method
-                    self.model = load_model_minimal(MODEL_PATH, gpu_available, self.bnb_config, self.device)
-                    logger.info("Model loaded successfully with minimal settings")
-                except Exception as final_error:
-                    logger.error(f"Failed to load model with minimal settings: {str(final_error)}")
-                    logger.error(traceback.format_exc())
-                    raise
-        
-        # Move model to device explicitly if needed
-        if gpu_available and not hasattr(self.model, "device"):
-            logger.info("Moving model to device explicitly")
-            self.model = self.model.to(self.device)
-            
         # Load tokenizer
         self.tokenizer = load_tokenizer(MODEL_PATH)
         logger.info("Tokenizer loaded successfully")
@@ -116,6 +74,48 @@ class ModelManager:
             logger.info(f"Model device: {self.model.device}")
         else:
             logger.info("Model device information not available")
+    
+    def load_model(self) -> None:
+        """Load the model with optimized memory settings."""
+        try:
+            logger.info("Step 3: Loading model from pretrained")
+            logger.info(f"Model path: {MODEL_PATH}")
+            logger.info(f"Model path exists: {os.path.exists(MODEL_PATH)}")
+            logger.info(f"Model path contents: {os.listdir(MODEL_PATH)}")
+            
+            # Load model with memory optimizations
+            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                MODEL_PATH,
+                device_map="auto",
+                torch_dtype=torch.float16,  # Use float16 for reduced memory usage
+                low_cpu_mem_usage=True,
+                use_cache=True,  # Enable KV cache for faster inference
+                quantization_config=self.bnb_config,  # Use the quantization config
+                max_memory={0: "12GB"},  # Limit GPU memory usage
+                offload_folder="offload",  # Enable disk offloading if needed
+                offload_state_dict=True  # Enable state dict offloading
+            )
+            
+            # Enable gradient checkpointing
+            if hasattr(self.model, "gradient_checkpointing_enable"):
+                self.model.gradient_checkpointing_enable()
+                logger.info("Gradient checkpointing enabled")
+            
+            # Move model to device and set to eval mode
+            self.model = self.model.to(self.device)
+            self.model.eval()  # Set to evaluation mode
+            
+            # Enable CUDA graph optimization if available
+            if torch.cuda.is_available():
+                torch.backends.cudnn.benchmark = True
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+            
+            logger.info("Model loaded successfully with primary method")
+            
+        except Exception as e:
+            logger.error(f"Error loading model: {str(e)}")
+            raise
     
     def _check_flash_attention(self):
         """Check if flash attention is available"""

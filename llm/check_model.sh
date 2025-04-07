@@ -2,7 +2,7 @@
 
 # This script checks if the model files exist and creates them if they don't
 
-MODEL_DIR="/app/Qwen2.5-VL-7B-Instruct"
+MODEL_DIR="/app/Qwen2.5-VL-3B-Instruct"
 echo "Checking model directory: $MODEL_DIR"
 
 if [ ! -d "$MODEL_DIR" ]; then

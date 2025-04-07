@@ -1,16 +1,25 @@
 import logging
 import torch
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, AutoTokenizer
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, AutoTokenizer, BitsAndBytesConfig
 
 logger = logging.getLogger(__name__)
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    # bnb_4bit_block_size=128
+    bnb_4bit_compute_dtype=torch.float16
+)
 
 def load_model_primary(model_path, gpu_available, use_flash_attention, bnb_config):
     """Primary model loading method"""
     logger.info("Attempting to load model with primary method")
     model_kwargs = {
         "device_map": "auto" if gpu_available else "cpu",
-        "low_cpu_mem_usage": True,
+        # "low_cpu_mem_usage": True,
         "quantization_config": bnb_config,
+        "max_memory": {0: "8GiB"},
+        "trust_remote_code": True
     }
     
     if use_flash_attention:

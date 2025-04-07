@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV CUDA_HOME=/usr/local/cuda
 ENV PATH=${CUDA_HOME}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -35,6 +36,8 @@ RUN pip3 install -U pip setuptools wheel && \
     pip3 install torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cu121
 RUN pip3 install -r requirements.txt 
 RUN pip3 install --upgrade safetensors
+
+RUN pip3 install qwen_vl_utils
 
 #RUN pip install -v gptqmodel --no-build-isolation
 # Copy the rest of the application

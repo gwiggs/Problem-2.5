@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import numpy as np
 from PIL import Image
 import decord
@@ -12,6 +12,9 @@ from app.core.config import (
     DEFAULT_NUM_FRAMES,
     CACHE_DIR
 )
+import cv2
+import torch
+import av
 
 logger = logging.getLogger(__name__)
 
@@ -42,70 +45,99 @@ def create_image_grid(images: List[np.ndarray], num_columns: int = 8) -> Image.I
     return grid_image
 
 def process_video_frames(
-    video_path: str,
-    num_frames: int = DEFAULT_NUM_FRAMES,
-    use_cache: bool = True
+    file_path: str, 
+    max_frames: int = 16,
+    target_size: Optional[Tuple[int, int]] = (224, 224)
 ) -> Tuple[List[np.ndarray], List[float], int]:
     """
-    Extract frames from a local video file using decord for efficient processing.
+    Process a video file and extract frames with caching.
     
     Args:
-        video_path: Path to the local video file
-        num_frames: Number of frames to extract
-        use_cache: Whether to use cached frames if available
+        file_path: Path to the video file
+        max_frames: Maximum number of frames to extract (default: 16)
+        target_size: Target size for resizing frames (width, height) or None for original size
         
     Returns:
         Tuple containing:
         - List of frames as numpy arrays
         - List of timestamps
-        - Total number of frames in video
+        - Total number of frames in the video
     """
+    # Create cache directory if it doesn't exist
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    
+    # Generate cache key based on file path and parameters
+    cache_key = f"{os.path.basename(file_path)}_{max_frames}_{target_size}"
+    cache_file = os.path.join(CACHE_DIR, f"{cache_key}.npz")
+    
+    # Check if cached frames exist
+    if os.path.exists(cache_file):
+        try:
+            logger.info(f"Loading cached frames for {file_path}")
+            cached_data = np.load(cache_file, allow_pickle=True)
+            frames = cached_data['frames']
+            timestamps = cached_data['timestamps'].tolist()
+            total_frames = int(cached_data['total_frames'])
+            logger.info(f"Frames cached for future use")
+            return frames, timestamps, total_frames
+        except Exception as e:
+            logger.warning(f"Error loading cached frames: {str(e)}")
+            # Continue with processing if cache loading fails
+    
     try:
-        if not os.path.exists(video_path):
-            raise HTTPException(status_code=400, detail=f"Video file not found: {video_path}")
-
-        # Create cache directory if it doesn't exist
-        os.makedirs(CACHE_DIR, exist_ok=True)
+        # Use decord for efficient video loading
+        video_reader = decord.VideoReader(file_path)
+        total_frames = len(video_reader)
         
-        # Generate cache key from file path and modification time
-        file_stat = os.stat(video_path)
-        cache_key = f"{os.path.basename(video_path)}_{file_stat.st_mtime}_{num_frames}"
+        # Calculate frame indices to sample evenly
+        if total_frames > max_frames:
+            # Sample frames evenly across the video
+            frame_indices = np.linspace(0, total_frames - 1, max_frames, dtype=int)
+        else:
+            # Use all frames if video is shorter than max_frames
+            frame_indices = np.arange(total_frames)
         
-        # Check cache
-        if use_cache:
-            frames_cache_file = os.path.join(CACHE_DIR, f'{cache_key}_frames.npy')
-            timestamps_cache_file = os.path.join(CACHE_DIR, f'{cache_key}_timestamps.npy')
+        # Extract frames in smaller chunks
+        frames = []
+        timestamps = []
+        chunk_size = 4  # Process 4 frames at a time
+        
+        for i in range(0, len(frame_indices), chunk_size):
+            chunk_indices = frame_indices[i:i + chunk_size]
             
-            if os.path.exists(frames_cache_file) and os.path.exists(timestamps_cache_file):
-                logger.info("Loading frames from cache")
-                frames = np.load(frames_cache_file)
-                timestamps = np.load(timestamps_cache_file)
-                return frames, timestamps, len(frames)
-
-        # Load video using decord
-        logger.info(f"Loading video: {video_path}")
-        vr = VideoReader(video_path, ctx=cpu(0))
-        total_frames = len(vr)
+            for idx in chunk_indices:
+                # Get frame and timestamp
+                frame = video_reader[idx].asnumpy()
+                timestamp = float(idx) / video_reader.get_avg_fps()
+                
+                # Resize if target size is provided
+                if target_size is not None:
+                    frame = cv2.resize(frame, target_size)
+                
+                frames.append(frame)
+                timestamps.append(timestamp)
+            
+            # Clear CUDA cache after each chunk
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         
-        if total_frames == 0:
-            raise HTTPException(status_code=400, detail="Video file is empty or corrupted")
-
-        # Sample frames uniformly
-        indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
-        frames = vr.get_batch(indices).asnumpy()
-        timestamps = np.array([vr.get_frame_timestamp(idx) for idx in indices])
-
-        # Cache the results
-        if use_cache:
-            np.save(frames_cache_file, frames)
-            np.save(timestamps_cache_file, timestamps)
-            logger.info("Frames cached for future use")
-
+        # Cache the frames for future use
+        try:
+            np.savez(
+                cache_file,
+                frames=frames,
+                timestamps=np.array(timestamps),
+                total_frames=total_frames
+            )
+            logger.info(f"Frames cached for future use")
+        except Exception as e:
+            logger.warning(f"Error caching frames: {str(e)}")
+        
         return frames, timestamps, total_frames
-
+        
     except Exception as e:
-        logger.error(f"Error processing video: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to process video: {str(e)}")
+        logger.error(f"Error processing video {file_path}: {str(e)}")
+        raise
 
 def process_image(image_path: str) -> Image.Image:
     """Process a single image file."""

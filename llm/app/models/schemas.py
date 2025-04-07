@@ -1,17 +1,40 @@
+from datetime import datetime
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class ProcessRequest(BaseModel):
     """Schema for process request"""
     prompt: str
     files: Optional[List[str]] = None
 
+class ContentAnalysis(BaseModel):
+    """Schema for content analysis"""
+    scene_description: str
+    identified_objects: List[str]
+    activities_detected: List[str]
+
+class SecurityAnalysis(BaseModel):
+    """Schema for security analysis"""
+    risk_level: str
+    concerns: List[str]
+    recommendations: List[str]
+
+class SentimentAnalysis(BaseModel):
+    """Schema for sentiment analysis"""
+    overall_sentiment: str
+    emotional_indicators: Dict[str, float]
+
 class ProcessResponse(BaseModel):
     """Schema for process response"""
-    prompt: str
-    result: str
-    processed_files: List[str]
-    device: str
+    filenames: List[str]
+    prompt_name: str
+    analysis: str
+    content_analysis: Optional[ContentAnalysis] = None
+    security_analysis: Optional[SecurityAnalysis] = None
+    sentiment_analysis: Optional[SentimentAnalysis] = None
+    model_version: str = "Qwen2.5-VL"
+    processing_time: float = Field(..., description="Processing time in seconds")
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 class HealthResponse(BaseModel):
     """Schema for health check response"""
