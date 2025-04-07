@@ -50,4 +50,4 @@ RUN ./check_model.sh
 EXPOSE 8100
 
 # Command to run the application
-CMD ["uvicorn", "llm_api:app", "--host", "0.0.0.0", "--port", "8100"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8100"]

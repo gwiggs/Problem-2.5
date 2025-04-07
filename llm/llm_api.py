@@ -118,6 +118,118 @@ def check_gpu_availability():
     
     return torch.cuda.is_available()
 
+def log_gpu_info():
+    """Log GPU information"""
+    if torch.cuda.is_available():
+        logger.info(f"Using CUDA device: {torch.cuda.get_device_name(0)}")
+        logger.info(f"CUDA version: {torch.version.cuda}")
+        logger.info(f"Available GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+        logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
+        logger.info(f"GPU memory before inference: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+    else:
+        logger.info("CUDA not available, using CPU")
+
+def check_flash_attention():
+    """Check if flash attention is available"""
+    try:
+        import flash_attn
+        logger.info(f"Flash Attention 2 is available: {flash_attn.__version__}")
+        return True
+    except ImportError:
+        logger.warning("Flash Attention 2 is not available, will use standard attention")
+        return False
+
+def load_model_primary(model_path, gpu_available, use_flash_attention):
+    """Primary model loading method"""
+    logger.info("Attempting to load model with primary method")
+    model_kwargs = {
+        "device_map": "auto" if gpu_available else "cpu",
+        "low_cpu_mem_usage": True,
+        "quantization_config": bnb_config,
+    }
+    
+    if use_flash_attention:
+        model_kwargs["attn_implementation"] = "flash_attention_2"
+        logger.info("Using Flash Attention 2")
+    else:
+        logger.info("Using standard attention")
+    
+    return Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model_path,
+        **model_kwargs
+    )
+
+def load_model_alternative(model_path, gpu_available, use_flash_attention):
+    """Alternative model loading method with explicit device mapping"""
+    logger.info("Attempting to load model with alternative method")
+    model_kwargs = {
+        "torch_dtype": torch.bfloat16,
+        "low_cpu_mem_usage": True,
+        "quantization_config": bnb_config
+    }
+    
+    if use_flash_attention:
+        model_kwargs["attn_implementation"] = "flash_attention_2"
+        logger.info("Using Flash Attention 2")
+    else:
+        logger.info("Using standard attention")
+    
+    if gpu_available:
+        device_map = {
+            "model": 0,  # Main model
+            "vision_model": 0,  # Vision encoder
+            "language_model": 0,  # Language model
+            "vision_projection": 0,  # Vision projection
+            "language_projection": 0,  # Language projection
+            "lm_head": 0,  # Language model head
+            "vision_model.embeddings": 0,  # Vision embeddings
+            "vision_model.encoder": 0,  # Vision encoder
+            "language_model.embeddings": 0,  # Language embeddings
+            "language_model.encoder": 0,  # Language encoder
+            "language_model.decoder": 0  # Language decoder
+        }
+        model_kwargs["device_map"] = device_map
+        logger.info(f"Using explicit device map: {device_map}")
+    else:
+        model_kwargs["device_map"] = "cpu"
+    
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model_path,
+        **model_kwargs
+    )
+    
+    if gpu_available and not hasattr(model, "device"):
+        logger.info("Moving model to GPU explicitly")
+        model = model.to(device)
+        
+    return model
+
+def load_model_minimal(model_path, gpu_available):
+    """Minimal model loading method with basic settings"""
+    logger.info("Attempting to load model with minimal settings")
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        low_cpu_mem_usage=True,
+        quantization_config=bnb_config,
+        device_map=None  # Don't use device_map at all
+    )
+    
+    if gpu_available:
+        logger.info("Moving model to GPU explicitly")
+        model = model.to(device)
+        
+    return model
+def load_tokenizer(model_path):
+    """Load the tokenizer for the model"""
+    logger.info("Loading tokenizer")
+    return AutoTokenizer.from_pretrained(model_path)
+
+def load_processor(model_path):
+    """Load the processor for the model"""
+    logger.info("Loading processor")
+    return AutoProcessor.from_pretrained(model_path)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -132,13 +244,10 @@ async def lifespan(app: FastAPI):
             # Force CUDA device selection
             logger.info("Step 2: Setting up CUDA device")
             device = torch.device("cuda:0")
-            logger.info(f"Using CUDA device: {torch.cuda.get_device_name(0)}")
-            logger.info(f"CUDA version: {torch.version.cuda}")
-            logger.info(f"Available GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+            log_gpu_info()
             
             # Set CUDA device explicitly
             torch.cuda.set_device(0)
-            logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
         else:
             device = torch.device("cpu")
             logger.info("CUDA not available, using CPU")
@@ -147,13 +256,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"PyTorch version: {torch.__version__}")
         
         # Check if flash-attn is installed
-        try:
-            import flash_attn
-            logger.info(f"Flash Attention 2 is available: {flash_attn.__version__}")
-            use_flash_attention = True
-        except ImportError:
-            logger.warning("Flash Attention 2 is not available, will use standard attention")
-            use_flash_attention = False
+        use_flash_attention = check_flash_attention()
         
         # Initialize model with explicit device placement
         logger.info("Step 3: Loading model from pretrained")
@@ -171,101 +274,24 @@ async def lifespan(app: FastAPI):
             logger.info(f"Model directory created: {os.path.exists(model_path)}")
         
         try:
-            logger.info("Attempting to load model")
-            #logger.info(safetensors.__version__)
-            #logger.info(load_file("Qwen2.5-VL-3B-Instruct/model-00001-of-00002.safetensors"))
-            model_kwargs = {
-                # "torch_dtype": torch.bfloat16,
-                "device_map": "auto" if gpu_available else "cpu",
-                "low_cpu_mem_usage": True,
-                "quantization_config": bnb_config,
-                #"use_safetensors": False
-            }
-            
-            # Only use flash attention if available
-            if use_flash_attention:
-                model_kwargs["attn_implementation"] = "flash_attention_2"
-                logger.info("Using Flash Attention 2")
-            else:
-                logger.info("Using standard attention")
-            
-            model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                model_path,
-                **model_kwargs
-            )
-            logger.info("Model loaded successfully")
-            
+            # Try primary loading method
+            model = load_model_primary(model_path, gpu_available, use_flash_attention)
+            logger.info("Model loaded successfully with primary method")
         except Exception as model_error:
-            logger.error(f"Failed to load model: {str(model_error)}")
+            logger.error(f"Failed to load model with primary method: {str(model_error)}")
             logger.error(traceback.format_exc())
             
-            # Try alternative loading method
-            logger.info("Attempting to load model with alternative method")
             try:
-                model_kwargs = {
-                    "torch_dtype": torch.bfloat16,
-                    "low_cpu_mem_usage": True,
-                    "quantization_config": bnb_config
-                }
-                
-                # Only use flash attention if available
-                if use_flash_attention:
-                    model_kwargs["attn_implementation"] = "flash_attention_2"
-                    logger.info("Using Flash Attention 2")
-                else:
-                    logger.info("Using standard attention")
-                
-                # Try loading with a more explicit device mapping
-                if gpu_available:
-                    # Create a more explicit device map
-                    device_map = {
-                        "model": 0,  # Main model
-                        "vision_model": 0,  # Vision encoder
-                        "language_model": 0,  # Language model
-                        "vision_projection": 0,  # Vision projection
-                        "language_projection": 0,  # Language projection
-                        "lm_head": 0,  # Language model head
-                        "vision_model.embeddings": 0,  # Vision embeddings
-                        "vision_model.encoder": 0,  # Vision encoder
-                        "language_model.embeddings": 0,  # Language embeddings
-                        "language_model.encoder": 0,  # Language encoder
-                        "language_model.decoder": 0  # Language decoder
-                    }
-                    model_kwargs["device_map"] = device_map
-                    logger.info(f"Using explicit device map: {device_map}")
-                else:
-                    model_kwargs["device_map"] = "cpu"
-                
-                model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                    model_path,
-                    **model_kwargs
-                )
-                
-                # If device_map wasn't used, move model to device explicitly
-                if gpu_available and not hasattr(model, "device"):
-                    logger.info("Moving model to GPU explicitly")
-                    model = model.to(device)
-                    
+                # Try alternative loading method
+                model = load_model_alternative(model_path, gpu_available, use_flash_attention)
                 logger.info("Model loaded successfully with alternative method")
             except Exception as alt_error:
                 logger.error(f"Failed to load model with alternative method: {str(alt_error)}")
                 logger.error(traceback.format_exc())
                 
-                # Try one more approach with minimal settings
-                logger.info("Attempting to load model with minimal settings")
                 try:
-                    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                        model_path,
-                        torch_dtype=torch.bfloat16,
-                        low_cpu_mem_usage=True,
-                        quantization_config=bnb_config,
-                        device_map=None  # Don't use device_map at all
-                    )
-                    
-                    if gpu_available:
-                        logger.info("Moving model to GPU explicitly")
-                        model = model.to(device)
-                        
+                    # Try minimal loading method
+                    model = load_model_minimal(model_path, gpu_available)
                     logger.info("Model loaded successfully with minimal settings")
                 except Exception as final_error:
                     logger.error(f"Failed to load model with minimal settings: {str(final_error)}")
@@ -276,9 +302,12 @@ async def lifespan(app: FastAPI):
         if gpu_available and not hasattr(model, "device"):
             logger.info("Moving model to device explicitly")
             model = model.to(device)
-            
-        logger.info("Step 4: Loading processor")
-        processor = AutoProcessor.from_pretrained(model_path)
+        # Load tokenizer
+        tokenizer = load_tokenizer(model_path)
+        logger.info("Tokenizer loaded successfully")
+        
+        # Load processor
+        processor = load_processor(model_path)
         logger.info("Processor loaded successfully")
         
         # Log model device
