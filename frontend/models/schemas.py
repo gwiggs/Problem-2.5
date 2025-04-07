@@ -44,5 +44,5 @@ class LLMResponse(BaseModel):
     """Schema for LLM analysis response."""
     filenames: List[str]
     prompt_name: str
-    analysis: str
+    analysis: Dict[str, Any]
     #created_at: datetime = Field(default_factory=datetime.now)

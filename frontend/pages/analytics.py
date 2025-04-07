@@ -47,7 +47,7 @@ def render_prompt_selection(prompts: List[LLMPrompt]) -> Optional[str]:
     selected_prompt = st.selectbox(
         "Select analysis type",
         options=[p.name for p in prompts],
-        format_func=lambda x: next((p.description for p in prompts if p.name == x), x),
+        format_func=lambda x: x,  # Simply display the prompt name
         help="Choose the type of analysis to perform"
     )
     

@@ -13,15 +13,17 @@ LLM_API_URL = "http://llm:8100"
 
 def main():
     """Main application entry point."""
-    # Initialize API client
-    api_client = APIClient(BASE_URL, LLM_API_URL)
-    
     # Initialize session state
     if "current_page" not in st.session_state:
         st.session_state.current_page = "Dashboard"
+    if "previous_page" not in st.session_state:
+        st.session_state.previous_page = "Dashboard"
     
     def render_content():
         """Render the appropriate page based on current selection."""
+        # Initialize API client
+        api_client = APIClient(BASE_URL, LLM_API_URL)
+        
         if st.session_state.current_page == "Dashboard":
             render_dashboard(api_client)
         elif st.session_state.current_page == "Upload":
@@ -30,6 +32,7 @@ def main():
             render_view_files_page(api_client)
         elif st.session_state.current_page == "Analytics":
             render_analytics_page(api_client)
+        # Settings page is handled in the layout component
     
     # Render the layout with the current page content
     render_layout(render_content)

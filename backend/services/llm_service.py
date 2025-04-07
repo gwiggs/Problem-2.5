@@ -139,6 +139,35 @@ class LLMService:
         return list(DEFAULT_PROMPTS.values())
     
     @staticmethod
+    async def add_prompt(prompt: LLMPrompt) -> LLMPrompt:
+        """Add a new prompt."""
+        if prompt.name in DEFAULT_PROMPTS:
+            raise HTTPException(status_code=400, detail=f"Prompt with name '{prompt.name}' already exists")
+        DEFAULT_PROMPTS[prompt.name] = prompt
+        return prompt
+    
+    @staticmethod
+    async def update_prompt(prompt_name: str, prompt: LLMPrompt) -> LLMPrompt:
+        """Update an existing prompt."""
+        if prompt_name not in DEFAULT_PROMPTS:
+            raise HTTPException(status_code=404, detail=f"Prompt '{prompt_name}' not found")
+        if prompt_name != prompt.name:
+            # If name is being changed, check if new name already exists
+            if prompt.name in DEFAULT_PROMPTS:
+                raise HTTPException(status_code=400, detail=f"Prompt with name '{prompt.name}' already exists")
+            # Remove old prompt and add new one
+            del DEFAULT_PROMPTS[prompt_name]
+        DEFAULT_PROMPTS[prompt.name] = prompt
+        return prompt
+    
+    @staticmethod
+    async def delete_prompt(prompt_name: str) -> None:
+        """Delete a prompt."""
+        if prompt_name not in DEFAULT_PROMPTS:
+            raise HTTPException(status_code=404, detail=f"Prompt '{prompt_name}' not found")
+        del DEFAULT_PROMPTS[prompt_name]
+    
+    @staticmethod
     async def analyze_videos(filenames: List[str], prompt_name: str) -> LLMResponse:
         """Send videos to LLM for analysis."""
         if prompt_name not in DEFAULT_PROMPTS:
@@ -150,11 +179,9 @@ class LLMService:
             # Prepare the request to the LLM service
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{LLM_SERVICE_URL}/analyze",
-                    json={
-                        "files": filenames,
-                        "prompt": prompt.template
-                    }
+                    f"{LLM_SERVICE_URL}/process/",
+                    files=[('files', open(filename, 'rb')) for filename in filenames],
+                    data={'prompt': prompt.template}
                 )
                 
                 if response.status_code != 200:
@@ -167,7 +194,7 @@ class LLMService:
                 return LLMResponse(
                     filenames=filenames,
                     prompt_name=prompt_name,
-                    analysis=data["analysis"]
+                    analysis=data["result"]  # The result now contains raw_response and metadata
                 )
         except Exception as e:
             raise HTTPException(

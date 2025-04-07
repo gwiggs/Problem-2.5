@@ -83,7 +83,6 @@ class APIClient:
         if not data.get("message", "").startswith("File deleted successfully"):
             raise ValueError(f"Unexpected response: {data.get('message', 'Unknown error')}") 
 
-    # Add to existing APIClient class
     def get_llm_prompts(self) -> List[LLMPrompt]:
         """Get available LLM prompts."""
         response = requests.get(f"{self.base_url}/llm/prompts")
@@ -92,6 +91,35 @@ class APIClient:
             raise ValueError(f"Failed to fetch prompts: {response.text}")
             
         return [LLMPrompt(**p) for p in response.json()]
+
+    def add_prompt(self, prompt: LLMPrompt) -> None:
+        """Add a new prompt."""
+        response = requests.post(
+            f"{self.base_url}/llm/prompts",
+            json=prompt.model_dump()
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to add prompt: {response.text}")
+
+    def update_prompt(self, prompt: LLMPrompt) -> None:
+        """Update an existing prompt."""
+        response = requests.put(
+            f"{self.base_url}/llm/prompts/{prompt.name}",
+            json=prompt.model_dump()
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to update prompt: {response.text}")
+
+    def delete_prompt(self, prompt_name: str) -> None:
+        """Delete a prompt."""
+        response = requests.delete(
+            f"{self.base_url}/llm/prompts/{prompt_name}"
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to delete prompt: {response.text}")
 
     def analyze_videos(self, filenames: List[str], prompt_name: str) -> LLMResponse:
         """Send videos for LLM analysis."""
@@ -117,8 +145,15 @@ class APIClient:
         if response.status_code != 200:
             raise ValueError(f"Analysis failed: {response.text}")
             
+        data = response.json()
+        
+        # Extract the result which contains raw_response and metadata
+        result = data.get('result', {})
+        if not isinstance(result, dict):
+            raise ValueError(f"Unexpected response format: {data}")
+            
         return LLMResponse(
             filenames=filenames,
             prompt_name=prompt_name,
-            analysis=response.json()['result']
+            analysis=result  # This is now a dict with raw_response and metadata
         )
