@@ -4,6 +4,7 @@ import shutil
 import torch
 from typing import List, Dict, Any
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends
+from PIL import Image
 
 from app.core.config import TEMP_DIR, MODEL_PATH
 from app.core.model_manager import ModelManager
@@ -24,7 +25,7 @@ def get_model_manager():
     return model_manager
 
 async def generate_response(prompt: str, media_files: List[str], media_types: List[str], model_manager: ModelManager) -> Dict[str, Any]:
-    """Generate response using Qwen2.5-VL model"""
+    """Generate response using Qwen2.5-VL model with proper video frame handling"""
     model = model_manager.get_model()
     processor = model_manager.get_processor()
     device = model_manager.get_device()
@@ -33,43 +34,81 @@ async def generate_response(prompt: str, media_files: List[str], media_types: Li
         raise HTTPException(status_code=500, detail="Model not initialized")
     
     try:
-        # Log device information before inference
         logger.info(f"Generating response on device: {device}")
         if torch.cuda.is_available():
             logger.info(f"GPU memory before inference: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
         
-        # Prepare media content for the model
-        media_content = []
+        # Parameters for video processing
+        total_pixels = 20480 * 28 * 28  # Same as reference implementation
+        min_pixels = 16 * 28 * 28       # Same as reference implementation
+        
+        # Prepare messages in chat format
+        messages = []
+        image_inputs = []
+        video_inputs = []
+        fps_list = []
         
         for file_path, media_type in zip(media_files, media_types):
             if media_type == "video":
                 # Process video frames
                 frames, timestamps, total_frames = await process_video_frames(file_path)
+                fps = len(frames) / timestamps[-1] if timestamps[-1] > 0 else 30.0
                 
-                # Convert frames to PIL Images
-                pil_frames = [Image.fromarray(frame) for frame in frames]
+                message = {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"video": file_path, "total_pixels": total_pixels, "min_pixels": min_pixels}
+                    ]
+                }
+                messages.append(message)
                 
-                # Add frames to media content
-                for frame in pil_frames:
-                    media_content.append({"image": frame})
+                # Convert frames to tensor format
+                video_tensor = torch.tensor(frames).permute(0, 3, 1, 2)  # [T, C, H, W]
+                video_inputs.append(video_tensor)
+                fps_list.append(fps)
                 
-                # Add video metadata to prompt
-                prompt = f"{prompt} [Video: {os.path.basename(file_path)}, {total_frames} frames, duration: {timestamps[-1]:.2f}s]"
+                # Log video frame info
+                num_frames, _, height, width = video_tensor.shape
+                logger.info(f"Video input shape: {video_tensor.shape}")
+                logger.info(f"Number of video tokens: {int(num_frames / 2 * height / 28 * width / 28)}")
+                
             else:
                 # Process image
                 image = await process_image(file_path)
-                media_content.append({"image": image})
+                image_inputs.append(image)
+                message = {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"image": image}
+                    ]
+                }
+                messages.append(message)
         
-        # Process inputs with the processor
+        # Add system message
+        messages.insert(0, {"role": "system", "content": "You are a helpful assistant."})
+        
+        # Apply chat template
+        text = processor.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+        
+        # Process all inputs
         inputs = processor(
-            text=prompt,
-            images=media_content,
+            text=[text],
+            images=image_inputs if image_inputs else None,
+            videos=video_inputs if video_inputs else None,
+            fps=fps_list if fps_list else None,
+            padding=True,
             return_tensors="pt"
         ).to(device)
         
         # Generate response
         with torch.no_grad():
-            outputs = model.generate(
+            output_ids = model.generate(
                 **inputs,
                 max_new_tokens=2048,
                 do_sample=True,
@@ -77,11 +116,15 @@ async def generate_response(prompt: str, media_files: List[str], media_types: Li
                 top_p=0.9,
                 repetition_penalty=1.1
             )
+            
+            # Extract only the generated part
+            generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, output_ids)]
+            response = processor.batch_decode(
+                generated_ids, 
+                skip_special_tokens=True, 
+                clean_up_tokenization_spaces=True
+            )[0]
         
-        # Decode the generated text
-        response = processor.decode(outputs[0], skip_special_tokens=True)
-        
-        # Log GPU memory after inference
         if torch.cuda.is_available():
             logger.info(f"GPU memory after inference: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
         
